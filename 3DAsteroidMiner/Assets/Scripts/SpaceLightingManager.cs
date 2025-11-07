@@ -116,7 +116,7 @@ public class SpaceLightingManager : MonoBehaviour
         sunLight.transform.rotation = Quaternion.Euler(sunRotation);
         
         // Disable shadows for better performance (optional - you can enable if needed)
-        sunLight.shadows = LightShadows.None;
+        sunLight.shadows = LightShadows.Hard;
         
         // Set light to render on all layers
         sunLight.cullingMask = -1;
