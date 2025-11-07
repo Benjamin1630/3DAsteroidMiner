@@ -8,6 +8,7 @@ namespace AsteroidMiner.Entities
     /// </summary>
     [RequireComponent(typeof(MeshFilter))]
     [RequireComponent(typeof(MeshRenderer))]
+    [RequireComponent(typeof(MeshCollider))]
     public class ProceduralAsteroidMesh : MonoBehaviour
     {
         [Header("Mesh Generation Settings")]
@@ -21,9 +22,13 @@ namespace AsteroidMiner.Entities
         [SerializeField] private bool enableShrinkEffect = true;
         [SerializeField] private float minShrinkScale = 0.3f; // Minimum size when fully mined (30%)
         
+        [Header("Collision Settings")]
+        [SerializeField] private bool updateCollisionMesh = true; // Update collider to match visual mesh
+        
         // ===== Components =====
         private MeshFilter meshFilter;
         private MeshRenderer meshRenderer;
+        private MeshCollider meshCollider;
         private Mesh originalMesh;
         private Vector3[] originalVertices;
         private Vector3[] displacedVertices;
@@ -35,6 +40,13 @@ namespace AsteroidMiner.Entities
         {
             meshFilter = GetComponent<MeshFilter>();
             meshRenderer = GetComponent<MeshRenderer>();
+            meshCollider = GetComponent<MeshCollider>();
+            
+            // Configure mesh collider
+            if (meshCollider != null)
+            {
+                meshCollider.convex = true; // Required for non-static colliders
+            }
         }
         
         /// <summary>
@@ -74,6 +86,13 @@ namespace AsteroidMiner.Entities
             originalMesh = baseMesh;
             meshFilter.mesh = originalMesh;
             
+            // Update collision mesh to match visual mesh
+            if (updateCollisionMesh && meshCollider != null)
+            {
+                meshCollider.sharedMesh = null; // Clear old mesh
+                meshCollider.sharedMesh = originalMesh; // Assign new mesh
+            }
+            
             // Reset shrink amount
             currentShrinkAmount = 0f;
         }
@@ -104,6 +123,14 @@ namespace AsteroidMiner.Entities
             originalMesh.vertices = shrunkVertices;
             originalMesh.RecalculateBounds();
             originalMesh.RecalculateNormals();
+            
+            // Update collision mesh to match shrinking visual
+            if (updateCollisionMesh && meshCollider != null)
+            {
+                // Force collider to update by reassigning mesh
+                meshCollider.sharedMesh = null;
+                meshCollider.sharedMesh = originalMesh;
+            }
         }
         
         /// <summary>
@@ -117,6 +144,13 @@ namespace AsteroidMiner.Entities
                 originalMesh.RecalculateBounds();
                 originalMesh.RecalculateNormals();
                 currentShrinkAmount = 0f;
+                
+                // Reset collision mesh
+                if (updateCollisionMesh && meshCollider != null)
+                {
+                    meshCollider.sharedMesh = null;
+                    meshCollider.sharedMesh = originalMesh;
+                }
             }
         }
         
