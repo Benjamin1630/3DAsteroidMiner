@@ -5,7 +5,7 @@ namespace AsteroidMiner.Entities
 {
     /// <summary>
     /// Individual asteroid entity component.
-    /// Handles asteroid behavior, rotation, health, and mining interactions.
+    /// Handles asteroid behavior, rotation, health, mining interactions, and procedural mesh.
     /// </summary>
     [RequireComponent(typeof(Rigidbody))]
     [RequireComponent(typeof(Collider))]
@@ -24,6 +24,7 @@ namespace AsteroidMiner.Entities
         // ===== Components =====
         private Rigidbody rb;
         private Renderer asteroidRenderer;
+        private ProceduralAsteroidMesh proceduralMesh;
         private Vector3 rotationAxis;
         private float rotationSpeed;
         
@@ -33,10 +34,14 @@ namespace AsteroidMiner.Entities
         {
             rb = GetComponent<Rigidbody>();
             asteroidRenderer = GetComponentInChildren<Renderer>();
+            proceduralMesh = GetComponentInChildren<ProceduralAsteroidMesh>();
             
             // Configure as static space object
-            rb.useGravity = false;
-            rb.isKinematic = true; // Asteroids don't move in this game
+            if (rb != null)
+            {
+                rb.useGravity = false;
+                rb.isKinematic = true; // Asteroids don't move in this game
+            }
         }
         
         /// <summary>
@@ -57,6 +62,13 @@ namespace AsteroidMiner.Entities
             // Randomize size within range
             float size = Random.Range(type.sizeRange.x, type.sizeRange.y);
             transform.localScale = Vector3.one * size;
+            
+            // Generate unique procedural mesh
+            if (proceduralMesh != null)
+            {
+                int randomSeed = Random.Range(0, 100000);
+                proceduralMesh.GenerateMesh(randomSeed);
+            }
             
             // Random rotation axis and speed
             rotationAxis = Random.onUnitSphere;
@@ -93,6 +105,13 @@ namespace AsteroidMiner.Entities
         {
             CurrentHealth -= damage;
             
+            // Update shrink effect based on damage
+            if (proceduralMesh != null && asteroidType != null)
+            {
+                float miningProgress = GetMiningProgress();
+                proceduralMesh.UpdateShrinkEffect(miningProgress);
+            }
+            
             if (CurrentHealth <= 0f)
             {
                 return true; // Signal for destruction
@@ -106,6 +125,9 @@ namespace AsteroidMiner.Entities
         /// </summary>
         public float GetMiningProgress()
         {
+            if (asteroidType == null)
+                return 0f;
+            
             return 1f - (CurrentHealth / asteroidType.health);
         }
         
@@ -118,6 +140,12 @@ namespace AsteroidMiner.Entities
             IsBeingMined = false;
             MinersTargeting = 0;
             asteroidType = null;
+            
+            // Reset mesh to full size
+            if (proceduralMesh != null)
+            {
+                proceduralMesh.ResetMesh();
+            }
         }
         
 #if UNITY_EDITOR

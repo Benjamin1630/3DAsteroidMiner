@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 1405527722254125271}
   - component: {fileID: 2037469709741628164}
   - component: {fileID: 7592458090118644964}
+  - component: {fileID: 1818917539845034355}
   m_Layer: 0
   m_Name: AsteroidMesh
   m_TagString: Untagged
@@ -40,7 +41,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3590067806723101831}
-  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: 0}
 --- !u!23 &7592458090118644964
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -66,7 +67,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 15303, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: dc647db2ff70a174e8586f3413d0df42, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -89,6 +90,25 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &1818917539845034355
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3590067806723101831}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6fcd05fe86b3fb43b3ba5973d884db2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AsteroidMiner.Entities.ProceduralAsteroidMesh
+  subdivisions: 2
+  baseRadius: 2
+  displacementAmount: 0.3
+  noiseScale: 2.5
+  seed: 0
+  enableShrinkEffect: 1
+  minShrinkScale: 0.3
 --- !u!1 &5986663863565348053
 GameObject:
   m_ObjectHideFlags: 0
