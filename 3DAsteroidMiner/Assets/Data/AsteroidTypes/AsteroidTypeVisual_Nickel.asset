@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0a6b1c7e2d4f3b8c9d0e1f2a3b4c5d6, type: 3}
+  m_Name: AsteroidTypeVisual_Nickel
+  m_EditorClassIdentifier: Assembly-CSharp::AsteroidTypeVisualData
+  typeName: Nickel
+  resourceName: Nickel
+  typeColor: {r: 0.78, g: 0.78, b: 0.71, a: 1}
+  baseColor: {r: 0.4, g: 0.4, b: 0.4, a: 1}
+  typeColorIntensity: 1.3
+  typeColorEmission: 0.2
+  holeDensity: 7
+  holeSize: 0.33
+  holeEdgeSharpness: 3
+  rarity: 1
+  baseValue: 12

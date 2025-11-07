@@ -10,6 +10,7 @@ namespace AsteroidMiner.Entities
     /// Uses Unity's new Input System for all input handling.
     /// </summary>
     [RequireComponent(typeof(Rigidbody))]
+    [RequireComponent(typeof(Collider))] // Ensure player has collision detection
     public class PlayerController : MonoBehaviour
     {
         [Header("Translation Settings")]
@@ -26,8 +27,10 @@ namespace AsteroidMiner.Entities
         [SerializeField] [Range(0.1f, 2f)] private float rotationSensitivity = 1f;
         
         [Header("Physics Settings")]
-        [SerializeField] private float linearDrag = 0.5f;
-        [SerializeField] private float angularDrag = 3f;
+        [Tooltip("Linear drag (0 = realistic space physics with no friction, >0 = easier control with auto-slowdown)")]
+        [SerializeField] private float linearDrag = 0f;
+        [Tooltip("Angular drag (0 = realistic space physics with perpetual spin, >0 = easier control with auto-stabilization)")]
+        [SerializeField] private float angularDrag = 0f;
         [SerializeField] [Range(0.1f, 2f)] private float movementSensitivity = 1f;
         
         [Header("Fuel Settings")]

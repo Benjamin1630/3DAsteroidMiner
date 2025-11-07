@@ -8,10 +8,11 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: SpaceSkybox
-  m_Shader: {fileID: 4800000, guid: b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6, type: 3}
+  m_Shader: {fileID: 4800000, guid: ce17e0618aba8574bad65ce181ce57c0, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
+  m_ValidKeywords:
+  - _BACKGROUNDMODE_CUBEMAP
   m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -23,17 +24,32 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - _StarfieldCube:
+        m_Texture: {fileID: 8900000, guid: ef4434285c682bc4c94f819679b31969, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _StarfieldTex:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _AmbientStarlight: 3
+    - _BackgroundIntensity: 0.5
+    - _BackgroundMode: 2
+    - _NebulaIntensity: 0
+    - _StarBrightness: 5
+    - _StarColorVariation: 0.4
+    - _StarDensity: 800
+    - _StarSize: 0.003
+    - _StarTwinkleSpeed: 0.25
     - _StarfieldIntensity: 0.5
-    - _SunGlow: 0.3
-    - _SunIntensity: 2
-    - _SunSize: 0.0125
+    - _SunGlow: 0.0025
+    - _SunIntensity: 5
+    - _SunSize: 0.001
     m_Colors:
+    - _NebulaColor1: {r: 0.116037644, g: 0, b: 0.3679245, a: 1}
+    - _NebulaColor2: {r: 0.23584908, g: 0.23584908, b: 0.23584908, a: 1}
     - _SunColor: {r: 1, g: 0.95, b: 0.8, a: 1}
     - _SunDirection: {r: -0.08639075, g: -0.24712428, b: 0.96512514, a: 0}
   m_BuildTextureStacks: []

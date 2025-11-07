@@ -37,9 +37,8 @@ namespace AsteroidMiner.Systems
         private List<GameObject> spawnedAsteroids = new List<GameObject>();
         private float spawnTimer = 0f;
         private int currentSector = 1;
-        private float worldSize;
-        private int maxAsteroids;
-        private float spawnChancePerCheck;
+        private int minAsteroidCount; // Set from pool's initialPoolSize
+        private int maxAsteroidCount; // Set from pool's maxPoolSize
         
         // ===== Weighted Spawn Tables =====
         private Dictionary<AsteroidRarity, List<AsteroidType>> asteroidsByRarity;
@@ -84,15 +83,19 @@ namespace AsteroidMiner.Systems
                 if (asteroidPool == null)
                 {
                     Debug.LogError("AsteroidSpawner: No AsteroidPool component found!");
+                    return;
                 }
             }
+            
+            // Get min/max asteroid counts from the pool configuration
+            minAsteroidCount = asteroidPool.InitialPoolSize;
+            maxAsteroidCount = asteroidPool.MaxPoolSize;
             
             UpdateSectorParameters();
             
             // Spawn initial asteroids to populate the field
-            int initialSpawnCount = Mathf.Min(50, maxAsteroids / 3); // Spawn 1/3 of max or 50, whichever is less
-            Debug.Log($"AsteroidSpawner: Spawning {initialSpawnCount} initial asteroids");
-            ForceSpawnAsteroids(initialSpawnCount);
+            Debug.Log($"AsteroidSpawner: Spawning {minAsteroidCount} initial asteroids (min={minAsteroidCount}, max={maxAsteroidCount} from AsteroidPool)");
+            ForceSpawnAsteroids(minAsteroidCount);
         }
         
         private void Update()
@@ -119,27 +122,16 @@ namespace AsteroidMiner.Systems
         
         /// <summary>
         /// Update spawn parameters based on current sector.
-        /// Formula from original game:
-        /// - Max asteroids = 150 + (sector - 1) * 50
-        /// - World size = 3000 + (sector - 1) * 250
-        /// - Spawn chance = 0.05 * (1 + sector * 0.1)
+        /// Kept for compatibility but no longer affects asteroid counts.
         /// </summary>
         private void UpdateSectorParameters()
         {
             currentSector = gameState != null ? gameState.sector : 1;
             
-            // Original game formulas
-            maxAsteroids = 150 + (currentSector - 1) * 50;
-            worldSize = 3000f + (currentSector - 1) * 250f;
-            
-            // Base spawn chance adjusted for frame-based checks
-            float baseSpawnChance = 0.05f * (1f + currentSector * 0.1f);
-            spawnChancePerCheck = baseSpawnChance * spawnCheckInterval;
-            
 #if UNITY_EDITOR
             if (showDebugInfo)
             {
-                Debug.Log($"Sector {currentSector}: Max Asteroids={maxAsteroids}, World Size={worldSize}, Spawn Chance={spawnChancePerCheck:F4}");
+                Debug.Log($"Sector {currentSector}: Asteroid count controlled by minAsteroidCount={minAsteroidCount}");
             }
 #endif
         }
@@ -149,28 +141,23 @@ namespace AsteroidMiner.Systems
         /// </summary>
         private void TrySpawnAsteroid()
         {
-            // Check if at max capacity
-            if (spawnedAsteroids.Count >= maxAsteroids)
+            // Check if at max capacity (from pool's maxPoolSize)
+            if (spawnedAsteroids.Count >= maxAsteroidCount)
             {
 #if UNITY_EDITOR
                 if (showDebugInfo && Time.frameCount % 300 == 0) // Log every 5 seconds at 60fps
                 {
-                    Debug.Log($"At max asteroid capacity: {spawnedAsteroids.Count}/{maxAsteroids}");
+                    Debug.Log($"At max asteroid capacity: {spawnedAsteroids.Count}/{maxAsteroidCount}");
                 }
 #endif
                 return;
             }
             
-            // Random spawn chance
-            float roll = Random.value;
-            if (roll > spawnChancePerCheck)
+            // Always allow spawning when below minimum, otherwise use random chance
+            bool shouldSpawn = spawnedAsteroids.Count < minAsteroidCount || Random.value < 0.05f;
+            
+            if (!shouldSpawn)
             {
-#if UNITY_EDITOR
-                if (showDebugInfo && Time.frameCount % 600 == 0) // Log occasionally
-                {
-                    Debug.Log($"Spawn chance failed: {roll:F4} > {spawnChancePerCheck:F4}");
-                }
-#endif
                 return;
             }
             
@@ -206,7 +193,7 @@ namespace AsteroidMiner.Systems
 #if UNITY_EDITOR
                 if (showDebugInfo)
                 {
-                    Debug.Log($"Successfully spawned asteroid! Total: {spawnedAsteroids.Count}/{maxAsteroids} - Type: {selectedType.resourceName}");
+                    Debug.Log($"Successfully spawned asteroid! Total: {spawnedAsteroids.Count}/{maxAsteroidCount} - Type: {selectedType.resourceName}");
                 }
 #endif
             }
@@ -339,6 +326,7 @@ namespace AsteroidMiner.Systems
         
         /// <summary>
         /// Despawn asteroids that are too far from the player.
+        /// If below minimum count, forcefully spawns replacement asteroids on the opposite side.
         /// </summary>
         private void DespawnDistantAsteroids()
         {
@@ -347,6 +335,7 @@ namespace AsteroidMiner.Systems
             
             float despawnDistSq = despawnDistance * despawnDistance;
             int despawnedCount = 0;
+            List<Vector3> despawnedPositions = new List<Vector3>(); // Track exact positions for opposite spawning
             
             for (int i = spawnedAsteroids.Count - 1; i >= 0; i--)
             {
@@ -361,18 +350,118 @@ namespace AsteroidMiner.Systems
                 float distSq = (asteroid.transform.position - playerTransform.position).sqrMagnitude;
                 if (distSq > despawnDistSq)
                 {
+                    // Store the EXACT position relative to player before despawning
+                    Vector3 relativePosition = asteroid.transform.position - playerTransform.position;
+                    despawnedPositions.Add(relativePosition);
+                    
                     asteroidPool.ReturnAsteroid(asteroid);
                     spawnedAsteroids.RemoveAt(i);
                     despawnedCount++;
                 }
             }
             
-#if UNITY_EDITOR
-            if (showDebugInfo && despawnedCount > 0)
+            // If we're below minimum and despawned asteroids, forcefully spawn replacements
+            if (despawnedCount > 0 && spawnedAsteroids.Count < minAsteroidCount)
             {
-                Debug.Log($"Despawned {despawnedCount} distant asteroids. Remaining: {spawnedAsteroids.Count}/{maxAsteroids}");
+                int asteroidsToSpawn = Mathf.Min(despawnedCount, minAsteroidCount - spawnedAsteroids.Count);
+                ForceSpawnOppositeAsteroids(despawnedPositions, asteroidsToSpawn);
+                
+#if UNITY_EDITOR
+                if (showDebugInfo)
+                {
+                    Debug.Log($"Despawned {despawnedCount} asteroids, force spawned {asteroidsToSpawn} replacements. Count: {spawnedAsteroids.Count}/{minAsteroidCount} (min)");
+                }
+#endif
+            }
+            else
+            {
+#if UNITY_EDITOR
+                if (showDebugInfo && despawnedCount > 0)
+                {
+                    Debug.Log($"Despawned {despawnedCount} distant asteroids. Remaining: {spawnedAsteroids.Count}/{maxAsteroidCount}");
+                }
+#endif
+            }
+        }
+        
+        /// <summary>
+        /// Force spawn asteroids on the opposite side of the player from where asteroids were despawned.
+        /// This maintains the minimum asteroid count as the player moves through space.
+        /// Spawns at the same distance on the opposite side to create seamless field continuity.
+        /// </summary>
+        private void ForceSpawnOppositeAsteroids(List<Vector3> despawnedRelativePositions, int count)
+        {
+            int spawned = 0;
+            
+            for (int i = 0; i < count && i < despawnedRelativePositions.Count; i++)
+            {
+                Vector3 despawnedRelativePos = despawnedRelativePositions[i];
+                
+                // Calculate the OPPOSITE position (flip 180 degrees around player)
+                Vector3 oppositeRelativePos = -despawnedRelativePos;
+                
+                // Add slight randomization to prevent exact grid patterns
+                // Randomize within a small cone (10 degrees) to maintain natural distribution
+                Vector3 randomizedRelativePos = RandomizeDirection(oppositeRelativePos.normalized, 10f) * oppositeRelativePos.magnitude;
+                
+                // Add some distance variation (+/- 50 units) to avoid all asteroids at exact same distance
+                float distanceVariation = Random.Range(-50f, 50f);
+                float finalDistance = randomizedRelativePos.magnitude + distanceVariation;
+                finalDistance = Mathf.Max(finalDistance, minDistanceFromPlayer); // Ensure not too close
+                
+                // Calculate final spawn position
+                Vector3 spawnPosition = playerTransform.position + randomizedRelativePos.normalized * finalDistance;
+                
+                // Select asteroid type
+                AsteroidType selectedType = SelectRandomAsteroidType();
+                if (selectedType == null)
+                    continue;
+                
+                // Spawn from pool
+                GameObject asteroid = asteroidPool.GetAsteroid(selectedType, spawnPosition);
+                if (asteroid != null)
+                {
+                    spawnedAsteroids.Add(asteroid);
+                    spawned++;
+                    
+#if UNITY_EDITOR
+                    if (showDebugInfo)
+                    {
+                        Debug.Log($"Force spawned {selectedType.resourceName} on opposite side at distance {finalDistance:F1}m (original was {despawnedRelativePos.magnitude:F1}m away)");
+                    }
+#endif
+                }
+            }
+            
+#if UNITY_EDITOR
+            if (showDebugInfo && spawned > 0)
+            {
+                Debug.Log($"Successfully force spawned {spawned}/{count} replacement asteroids on opposite side");
             }
 #endif
+        }
+        
+        /// <summary>
+        /// Randomize a direction vector within a cone angle.
+        /// Used to add variation to opposite-side spawning.
+        /// </summary>
+        private Vector3 RandomizeDirection(Vector3 direction, float maxAngleDegrees)
+        {
+            // Convert to quaternion rotation
+            Quaternion baseRotation = Quaternion.LookRotation(direction);
+            
+            // Add random rotation within cone
+            float randomAngle = Random.Range(0f, maxAngleDegrees);
+            float randomRotation = Random.Range(0f, 360f);
+            
+            Quaternion randomOffset = Quaternion.Euler(
+                Mathf.Cos(randomRotation * Mathf.Deg2Rad) * randomAngle,
+                Mathf.Sin(randomRotation * Mathf.Deg2Rad) * randomAngle,
+                0f
+            );
+            
+            Quaternion finalRotation = baseRotation * randomOffset;
+            return finalRotation * Vector3.forward;
         }
         
         /// <summary>

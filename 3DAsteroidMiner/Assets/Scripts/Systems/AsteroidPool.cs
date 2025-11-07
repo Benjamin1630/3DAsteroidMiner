@@ -17,6 +17,10 @@ namespace AsteroidMiner.Systems
         [SerializeField] private int maxPoolSize = 500;
         [SerializeField] private Transform poolParent;
         
+        // ===== Public Properties =====
+        public int InitialPoolSize => initialPoolSize;
+        public int MaxPoolSize => maxPoolSize;
+        
         // ===== Pool Data Structures =====
         private Queue<GameObject> availableAsteroids = new Queue<GameObject>();
         private HashSet<GameObject> activeAsteroids = new HashSet<GameObject>();
@@ -65,6 +69,9 @@ namespace AsteroidMiner.Systems
             }
             
             // Initialize and activate
+            // IMPORTANT: Activate BEFORE initialization to ensure all components work properly
+            asteroid.SetActive(true);
+            
             Asteroid asteroidComponent = asteroid.GetComponent<Asteroid>();
             if (asteroidComponent != null)
             {
@@ -82,10 +89,10 @@ namespace AsteroidMiner.Systems
             else
             {
                 Debug.LogError("Asteroid prefab is missing Asteroid component!");
+                asteroid.SetActive(false); // Deactivate if component missing
                 return null;
             }
             
-            asteroid.SetActive(true);
             activeAsteroids.Add(asteroid);
             
             return asteroid;

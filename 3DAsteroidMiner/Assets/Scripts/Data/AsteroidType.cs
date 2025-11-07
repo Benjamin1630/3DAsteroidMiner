@@ -28,6 +28,9 @@ namespace AsteroidMiner.Data
         public Color asteroidColor = Color.gray;
         public Material asteroidMaterial;
         
+        [Tooltip("Optional: New visual system data (swiss cheese shader)")]
+        public AsteroidTypeVisualData visualData;
+        
         [Tooltip("Size variation range")]
         public Vector2 sizeRange = new Vector2(3f, 8f);
         

@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0a6b1c7e2d4f3b8c9d0e1f2a3b4c5d6, type: 3}
+  m_Name: AsteroidTypeVisual_Gold
+  m_EditorClassIdentifier: Assembly-CSharp::AsteroidTypeVisualData
+  typeName: Gold
+  resourceName: Gold
+  typeColor: {r: 1, g: 0.84, b: 0, a: 1}
+  baseColor: {r: 0.4, g: 0.4, b: 0.4, a: 1}
+  typeColorIntensity: 1.6
+  typeColorEmission: 0.35
+  holeDensity: 8
+  holeSize: 0.35
+  holeEdgeSharpness: 3
+  rarity: 2
+  baseValue: 40

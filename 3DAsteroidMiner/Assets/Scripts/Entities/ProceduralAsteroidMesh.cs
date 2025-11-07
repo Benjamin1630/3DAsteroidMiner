@@ -5,6 +5,7 @@ namespace AsteroidMiner.Entities
     /// <summary>
     /// Generates procedural asteroid meshes with random vertex displacement.
     /// Supports dynamic shrinking for mining effects.
+    /// No UV mapping required - shader uses object-space procedural generation.
     /// </summary>
     [RequireComponent(typeof(MeshFilter))]
     [RequireComponent(typeof(MeshRenderer))]
@@ -17,6 +18,10 @@ namespace AsteroidMiner.Entities
         [SerializeField] private float displacementAmount = 0.3f; // How much vertices can be displaced
         [SerializeField] private float noiseScale = 2.5f; // Perlin noise scale for randomness
         [SerializeField] private int seed = 0;
+        
+        [Header("Material Settings")]
+        [Tooltip("Default material to use if none is assigned. Should be set in prefab.")]
+        [SerializeField] private Material defaultAsteroidMaterial;
         
         [Header("Mining Shrink Effect")]
         [SerializeField] private bool enableShrinkEffect = true;
@@ -47,18 +52,44 @@ namespace AsteroidMiner.Entities
             {
                 meshCollider.convex = true; // Required for non-static colliders
             }
+            
+            // Ensure material is assigned from the start
+            if (meshRenderer != null && defaultAsteroidMaterial != null)
+            {
+                if (meshRenderer.sharedMaterial == null)
+                {
+                    meshRenderer.sharedMaterial = defaultAsteroidMaterial;
+                    Debug.Log($"ProceduralAsteroidMesh: Assigned default material in Awake on {gameObject.name}");
+                }
+            }
         }
         
         /// <summary>
         /// Generate a new random asteroid mesh with a specific seed.
         /// </summary>
-        public void GenerateMesh(int randomSeed)
+        /// <param name="randomSeed">Random seed for unique asteroid generation</param>
+        /// <param name="asteroidHealth">Optional: Health of asteroid type to scale base radius</param>
+        public void GenerateMesh(int randomSeed, float asteroidHealth = 0f)
         {
             seed = randomSeed;
             Random.InitState(seed);
             
-            // Create base icosphere mesh
-            Mesh baseMesh = CreateIcosphere(subdivisions);
+            // Scale base radius based on asteroid health (if provided)
+            // Lower health = smaller asteroid, Higher health = larger asteroid
+            // Health values typically range from 2 (legendary) to 10 (common)
+            float effectiveRadius = baseRadius;
+            if (asteroidHealth > 0f)
+            {
+                // Map health to radius multiplier
+                // Health 2 (legendary, weak) = 0.6x radius (smallest)
+                // Health 5-6 (mid) = 0.85x-0.95x radius (medium)
+                // Health 10 (common, strong) = 1.3x radius (largest)
+                float normalizedHealth = Mathf.Clamp01((asteroidHealth - 2f) / 8f); // Maps 2-10 to 0-1
+                effectiveRadius = baseRadius * Mathf.Lerp(0.6f, 1.3f, normalizedHealth);
+            }
+            
+            // Create base icosphere mesh with scaled radius
+            Mesh baseMesh = CreateIcosphere(subdivisions, effectiveRadius);
             
             // Store original vertices
             originalVertices = baseMesh.vertices;
@@ -74,7 +105,7 @@ namespace AsteroidMiner.Entities
                 
                 // Displace vertex along its normal (radially from center)
                 float displacement = Mathf.Lerp(-displacementAmount, displacementAmount, noise);
-                displacedVertices[i] = vertex.normalized * (baseRadius + displacement);
+                displacedVertices[i] = vertex.normalized * (effectiveRadius + displacement);
             }
             
             // Apply displaced vertices to mesh
@@ -83,8 +114,44 @@ namespace AsteroidMiner.Entities
             baseMesh.RecalculateNormals();
             baseMesh.RecalculateTangents();
             
+            // Verify UVs were generated
+            if (baseMesh.uv == null || baseMesh.uv.Length == 0)
+            {
+                Debug.LogError($"ProceduralAsteroidMesh: UVs not generated for {gameObject.name}!");
+            }
+            else
+            {
+                Debug.Log($"ProceduralAsteroidMesh: Generated {baseMesh.uv.Length} UVs for {baseMesh.vertexCount} vertices on {gameObject.name}");
+            }
+            
             originalMesh = baseMesh;
+            
+            // CRITICAL: Preserve material before and after mesh assignment
+            Material preservedMaterial = null;
+            if (meshRenderer != null)
+            {
+                preservedMaterial = meshRenderer.sharedMaterial;
+            }
+            
+            // If no material is assigned, use default
+            if (preservedMaterial == null && defaultAsteroidMaterial != null)
+            {
+                preservedMaterial = defaultAsteroidMaterial;
+                Debug.Log($"ProceduralAsteroidMesh: Using default material for {gameObject.name}");
+            }
+            
             meshFilter.mesh = originalMesh;
+            
+            // Restore/assign material after mesh assignment
+            if (preservedMaterial != null && meshRenderer != null)
+            {
+                meshRenderer.sharedMaterial = preservedMaterial;
+                Debug.Log($"ProceduralAsteroidMesh: Material '{preservedMaterial.name}' assigned to {gameObject.name}");
+            }
+            else if (meshRenderer != null)
+            {
+                Debug.LogError($"ProceduralAsteroidMesh: No material available for {gameObject.name}! Assign defaultAsteroidMaterial in Inspector.");
+            }
             
             // Update collision mesh to match visual mesh
             if (updateCollisionMesh && meshCollider != null)
@@ -154,13 +221,35 @@ namespace AsteroidMiner.Entities
             }
         }
         
+        /// <summary>
+        /// Explicitly set the asteroid material. Use this before calling GenerateMesh.
+        /// </summary>
+        public void SetMaterial(Material material)
+        {
+            if (meshRenderer != null && material != null)
+            {
+                meshRenderer.sharedMaterial = material;
+                Debug.Log($"ProceduralAsteroidMesh: Material explicitly set to '{material.name}' on {gameObject.name}");
+            }
+        }
+        
+        /// <summary>
+        /// Get the current material on the renderer.
+        /// </summary>
+        public Material GetMaterial()
+        {
+            return meshRenderer != null ? meshRenderer.sharedMaterial : null;
+        }
+        
         // ===== Mesh Generation =====
         
         /// <summary>
         /// Create an icosphere mesh (geodesic sphere with evenly distributed vertices).
         /// Better than UV sphere for deformation.
         /// </summary>
-        private Mesh CreateIcosphere(int subdivisionLevel)
+        /// <param name="subdivisionLevel">Number of subdivisions (0-4)</param>
+        /// <param name="radius">Radius of the sphere</param>
+        private Mesh CreateIcosphere(int subdivisionLevel, float radius)
         {
             Mesh mesh = new Mesh();
             mesh.name = "Procedural Asteroid";
@@ -170,18 +259,18 @@ namespace AsteroidMiner.Entities
             
             Vector3[] vertices = new Vector3[]
             {
-                new Vector3(-1,  t,  0).normalized * baseRadius,
-                new Vector3( 1,  t,  0).normalized * baseRadius,
-                new Vector3(-1, -t,  0).normalized * baseRadius,
-                new Vector3( 1, -t,  0).normalized * baseRadius,
-                new Vector3( 0, -1,  t).normalized * baseRadius,
-                new Vector3( 0,  1,  t).normalized * baseRadius,
-                new Vector3( 0, -1, -t).normalized * baseRadius,
-                new Vector3( 0,  1, -t).normalized * baseRadius,
-                new Vector3( t,  0, -1).normalized * baseRadius,
-                new Vector3( t,  0,  1).normalized * baseRadius,
-                new Vector3(-t,  0, -1).normalized * baseRadius,
-                new Vector3(-t,  0,  1).normalized * baseRadius
+                new Vector3(-1,  t,  0).normalized * radius,
+                new Vector3( 1,  t,  0).normalized * radius,
+                new Vector3(-1, -t,  0).normalized * radius,
+                new Vector3( 1, -t,  0).normalized * radius,
+                new Vector3( 0, -1,  t).normalized * radius,
+                new Vector3( 0,  1,  t).normalized * radius,
+                new Vector3( 0, -1, -t).normalized * radius,
+                new Vector3( 0,  1, -t).normalized * radius,
+                new Vector3( t,  0, -1).normalized * radius,
+                new Vector3( t,  0,  1).normalized * radius,
+                new Vector3(-t,  0, -1).normalized * radius,
+                new Vector3(-t,  0,  1).normalized * radius
             };
             
             int[] triangles = new int[]
@@ -195,10 +284,12 @@ namespace AsteroidMiner.Entities
             mesh.vertices = vertices;
             mesh.triangles = triangles;
             
+            // No UV generation needed - shader uses object-space coordinates
+            
             // Subdivide for smoother sphere
             for (int i = 0; i < subdivisionLevel; i++)
             {
-                mesh = SubdivideMesh(mesh);
+                mesh = SubdivideMesh(mesh, radius);
             }
             
             mesh.RecalculateBounds();
@@ -210,7 +301,9 @@ namespace AsteroidMiner.Entities
         /// <summary>
         /// Subdivide mesh triangles for higher detail.
         /// </summary>
-        private Mesh SubdivideMesh(Mesh mesh)
+        /// <param name="mesh">Mesh to subdivide</param>
+        /// <param name="radius">Sphere radius to project midpoints onto</param>
+        private Mesh SubdivideMesh(Mesh mesh, float radius)
         {
             Vector3[] oldVertices = mesh.vertices;
             int[] oldTriangles = mesh.triangles;
@@ -229,9 +322,9 @@ namespace AsteroidMiner.Entities
                 int v2 = oldTriangles[i + 2];
                 
                 // Get or create midpoint vertices
-                int m0 = GetMidpointIndex(v0, v1, midpointCache, newVerticesList, oldVertices);
-                int m1 = GetMidpointIndex(v1, v2, midpointCache, newVerticesList, oldVertices);
-                int m2 = GetMidpointIndex(v2, v0, midpointCache, newVerticesList, oldVertices);
+                int m0 = GetMidpointIndex(v0, v1, midpointCache, newVerticesList, oldVertices, radius);
+                int m1 = GetMidpointIndex(v1, v2, midpointCache, newVerticesList, oldVertices, radius);
+                int m2 = GetMidpointIndex(v2, v0, midpointCache, newVerticesList, oldVertices, radius);
                 
                 // Create 4 new triangles from 1 old triangle
                 // Triangle 1: v0, m0, m2
@@ -258,6 +351,9 @@ namespace AsteroidMiner.Entities
             Mesh newMesh = new Mesh();
             newMesh.vertices = newVerticesList.ToArray();
             newMesh.triangles = newTrianglesList.ToArray();
+            
+            // No UV generation needed - shader uses object-space coordinates
+            
             return newMesh;
         }
         
@@ -266,7 +362,7 @@ namespace AsteroidMiner.Entities
         /// Uses caching to reuse vertices on shared edges.
         /// </summary>
         private int GetMidpointIndex(int v0, int v1, System.Collections.Generic.Dictionary<long, int> cache, 
-            System.Collections.Generic.List<Vector3> vertices, Vector3[] originalVertices)
+            System.Collections.Generic.List<Vector3> vertices, Vector3[] originalVertices, float radius)
         {
             // Create unique key for this edge (order independent)
             long key = ((long)Mathf.Min(v0, v1) << 32) | (long)Mathf.Max(v0, v1);
@@ -278,7 +374,7 @@ namespace AsteroidMiner.Entities
             }
             
             // Create new midpoint vertex
-            Vector3 midpoint = ((originalVertices[v0] + originalVertices[v1]) / 2f).normalized * baseRadius;
+            Vector3 midpoint = ((originalVertices[v0] + originalVertices[v1]) / 2f).normalized * radius;
             int newIndex = vertices.Count;
             vertices.Add(midpoint);
             cache[key] = newIndex;

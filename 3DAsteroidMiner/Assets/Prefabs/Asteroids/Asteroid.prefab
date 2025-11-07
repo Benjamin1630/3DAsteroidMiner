@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 8182151523197913111}
   - component: {fileID: 7592458090118644964}
   - component: {fileID: 1818917539845034355}
+  - component: {fileID: 3785247142666035230}
   m_Layer: 0
   m_Name: AsteroidMesh
   m_TagString: Untagged
@@ -90,7 +91,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: dc647db2ff70a174e8586f3413d0df42, type: 2}
+  - {fileID: 2100000, guid: 8c0ff4c79682ad14582020c6876bae52, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -126,13 +127,29 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AsteroidMiner.Entities.ProceduralAsteroidMesh
   subdivisions: 2
-  baseRadius: 2
+  baseRadius: 1
   displacementAmount: 0.3
   noiseScale: 2.5
   seed: 0
+  defaultAsteroidMaterial: {fileID: 2100000, guid: 8c0ff4c79682ad14582020c6876bae52, type: 2}
   enableShrinkEffect: 1
   minShrinkScale: 0.3
   updateCollisionMesh: 1
+--- !u!114 &3785247142666035230
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3590067806723101831}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c9f5a0d6e1b3f2a7b8c9d0e1f2a3b4c5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AsteroidVisualController
+  asteroidMaterial: {fileID: 2100000, guid: 8c0ff4c79682ad14582020c6876bae52, type: 2}
+  asteroidRenderer: {fileID: 0}
+  typeData: {fileID: 0}
 --- !u!1 &5986663863565348053
 GameObject:
   m_ObjectHideFlags: 0
@@ -143,7 +160,6 @@ GameObject:
   m_Component:
   - component: {fileID: 2705635623085055495}
   - component: {fileID: 7600042916555428730}
-  - component: {fileID: 5225184474111310377}
   - component: {fileID: 9127626714181606862}
   m_Layer: 9
   m_Name: Asteroid
@@ -178,7 +194,7 @@ Rigidbody:
   serializedVersion: 5
   m_Mass: 1
   m_LinearDamping: 0
-  m_AngularDamping: 0.05
+  m_AngularDamping: 0
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -191,31 +207,10 @@ Rigidbody:
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
   m_UseGravity: 0
-  m_IsKinematic: 0
+  m_IsKinematic: 1
   m_Interpolate: 1
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!135 &5225184474111310377
-SphereCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5986663863565348053}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Radius: 0.5
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &9127626714181606862
 MonoBehaviour:
   m_ObjectHideFlags: 0

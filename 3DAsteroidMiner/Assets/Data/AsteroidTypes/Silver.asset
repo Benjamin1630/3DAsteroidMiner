@@ -19,5 +19,6 @@ MonoBehaviour:
   spawnChance: 0.07
   asteroidColor: {r: 0.81590426, g: 0.8962264, b: 0.8885767, a: 1}
   asteroidMaterial: {fileID: 0}
+  visualData: {fileID: 11400000, guid: 3d36c96cd157a684b914941d18940505, type: 2}
   sizeRange: {x: 3, y: 8}
   rotationSpeedRange: {x: 10, y: 30}
