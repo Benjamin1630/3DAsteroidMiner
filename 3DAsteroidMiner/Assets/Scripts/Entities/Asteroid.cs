@@ -21,6 +21,14 @@ namespace AsteroidMiner.Entities
         public bool IsBeingMined { get; set; }
         public int MinersTargeting { get; set; } = 0;
         
+        // ===== Scanning State =====
+        private bool isScanned = false;
+        private float scanHighlightTimer = 0f;
+        private Color originalEmissionColor;
+        private bool hadEmission = false;
+        private static readonly int EmissionColorProperty = Shader.PropertyToID("_EmissionColor");
+        private MaterialPropertyBlock scanPropertyBlock;
+        
         // ===== Components =====
         private Rigidbody rb;
         private Renderer asteroidRenderer;
@@ -37,6 +45,9 @@ namespace AsteroidMiner.Entities
             asteroidRenderer = GetComponentInChildren<Renderer>();
             proceduralMesh = GetComponentInChildren<ProceduralAsteroidMesh>();
             visualController = GetComponentInChildren<AsteroidVisualController>();
+            
+            // Initialize material property block for scan highlighting
+            scanPropertyBlock = new MaterialPropertyBlock();
             
             // Configure as dynamic physics object in space (zero friction environment)
             if (rb != null)
@@ -61,13 +72,13 @@ namespace AsteroidMiner.Entities
             IsBeingMined = false;
             MinersTargeting = 0;
             
-            // Ensure components are cached (in case Awake didn't run or object was disabled)
-            if (asteroidRenderer == null)
-                asteroidRenderer = GetComponentInChildren<Renderer>();
-            if (proceduralMesh == null)
-                proceduralMesh = GetComponentInChildren<ProceduralAsteroidMesh>();
-            if (visualController == null)
-                visualController = GetComponentInChildren<AsteroidVisualController>();
+            // Components should be cached in Awake - only check once in editor for debugging
+#if UNITY_EDITOR
+            if (asteroidRenderer == null || proceduralMesh == null)
+            {
+                Debug.LogError($"Asteroid components not cached in Awake! Renderer: {asteroidRenderer != null}, ProceduralMesh: {proceduralMesh != null}");
+            }
+#endif
             
             // CRITICAL: Set world position, not local position
             // Must be done BEFORE setting scale to avoid parent transform issues
@@ -169,9 +180,19 @@ namespace AsteroidMiner.Entities
         
         private void Update()
         {
-            // Physics now handles rotation via angular velocity
-            // No need for manual rotation with Transform.Rotate
+            // Handle scan highlight timer
+            if (isScanned && scanHighlightTimer > 0f)
+            {
+                scanHighlightTimer -= Time.deltaTime;
+                if (scanHighlightTimer <= 0f)
+                {
+                    SetScanned(false, 0f);
+                }
+            }
         }
+        
+        // REMOVED: Empty Update() method for performance
+        // Physics handles rotation via angular velocity in Rigidbody
         
         /// <summary>
         /// Apply mining damage to the asteroid.
@@ -250,6 +271,74 @@ namespace AsteroidMiner.Entities
             return rb != null ? rb.linearVelocity : Vector3.zero; // Updated API
         }
         
+        /// <summary>
+        /// Set the scanned state of the asteroid (highlight with emission glow).
+        /// </summary>
+        public void SetScanned(bool scanned, float duration)
+        {
+            if (asteroidRenderer == null)
+                return;
+            
+            if (scanned)
+            {
+                // Store original emission state
+                if (!isScanned)
+                {
+                    Material mat = asteroidRenderer.sharedMaterial;
+                    if (mat != null)
+                    {
+                        hadEmission = mat.IsKeywordEnabled("_EMISSION");
+                        if (hadEmission)
+                        {
+                            originalEmissionColor = mat.GetColor(EmissionColorProperty);
+                        }
+                    }
+                }
+                
+                isScanned = true;
+                scanHighlightTimer = duration;
+                
+                // Apply scan highlight effect
+                Color scanColor = new Color(0.2f, 0.8f, 1f, 1f); // Cyan holographic color
+                
+                // Use MaterialPropertyBlock to avoid creating material instances
+                asteroidRenderer.GetPropertyBlock(scanPropertyBlock);
+                scanPropertyBlock.SetColor(EmissionColorProperty, scanColor * 2f); // Boost emission
+                asteroidRenderer.SetPropertyBlock(scanPropertyBlock);
+                
+                // Enable emission keyword on the material
+                Material mat2 = asteroidRenderer.sharedMaterial;
+                if (mat2 != null)
+                {
+                    mat2.EnableKeyword("_EMISSION");
+                }
+            }
+            else
+            {
+                // Remove scan highlight
+                isScanned = false;
+                scanHighlightTimer = 0f;
+                
+                // Restore original emission state
+                Material mat = asteroidRenderer.sharedMaterial;
+                if (mat != null)
+                {
+                    if (hadEmission)
+                    {
+                        asteroidRenderer.GetPropertyBlock(scanPropertyBlock);
+                        scanPropertyBlock.SetColor(EmissionColorProperty, originalEmissionColor);
+                        asteroidRenderer.SetPropertyBlock(scanPropertyBlock);
+                    }
+                    else
+                    {
+                        // Clear the property block
+                        asteroidRenderer.SetPropertyBlock(null);
+                        mat.DisableKeyword("_EMISSION");
+                    }
+                }
+            }
+        }
+        
 #if UNITY_EDITOR
         private void OnDrawGizmosSelected()
         {
@@ -258,6 +347,13 @@ namespace AsteroidMiner.Entities
             {
                 Gizmos.color = Color.Lerp(Color.red, Color.green, CurrentHealth / asteroidType.health);
                 Gizmos.DrawWireSphere(transform.position, transform.localScale.x / 2f);
+            }
+            
+            // Show scan highlight status
+            if (isScanned)
+            {
+                Gizmos.color = new Color(0.2f, 0.8f, 1f, 0.5f);
+                Gizmos.DrawWireSphere(transform.position, transform.localScale.x / 2f + 0.5f);
             }
         }
 #endif

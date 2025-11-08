@@ -24,6 +24,10 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - _Cubemap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _StarfieldCube:
         m_Texture: {fileID: 8900000, guid: ef4434285c682bc4c94f819679b31969, type: 3}
         m_Scale: {x: 1, y: 1}
@@ -34,15 +38,17 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _AmbientStarlight: 3
+    - _AmbientStarlight: 1.5
     - _BackgroundIntensity: 0.5
     - _BackgroundMode: 2
+    - _CubemapIntensity: 1
     - _NebulaIntensity: 0
-    - _StarBrightness: 5
+    - _StarBrightness: 0.1
     - _StarColorVariation: 0.4
-    - _StarDensity: 800
-    - _StarSize: 0.003
-    - _StarTwinkleSpeed: 0.25
+    - _StarDensity: 100
+    - _StarLayerStrength: 2
+    - _StarSize: 0.05
+    - _StarTwinkleSpeed: 1
     - _StarfieldIntensity: 0.5
     - _SunGlow: 0.0025
     - _SunIntensity: 5

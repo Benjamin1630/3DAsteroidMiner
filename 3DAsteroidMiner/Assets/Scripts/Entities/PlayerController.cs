@@ -17,25 +17,23 @@ namespace AsteroidMiner.Entities
         [SerializeField] private float baseThrust = 20f;
         [SerializeField] private float strafeThrust = 15f;
         [SerializeField] private float verticalThrust = 15f;
-        [SerializeField] private float boostMultiplier = 2f;
         
         [Header("Rotation Settings")]
-        [SerializeField] private float pitchSpeed = 60f;
-        [SerializeField] private float yawSpeed = 60f;
-        [SerializeField] private float rollSpeed = 90f;
-        [SerializeField] private float mouseSensitivity = 1f;
-        [SerializeField] [Range(0.1f, 2f)] private float rotationSensitivity = 1f;
+        [SerializeField] private float pitchSpeed = 20f;
+        [SerializeField] private float yawSpeed = 20f;
+        [SerializeField] private float rollSpeed = 30f;
+        [SerializeField] private float mouseSensitivity = 0.05f;
+        [SerializeField] [Range(0.1f, 2f)] private float rotationSensitivity = 0.125f;
         
         [Header("Physics Settings")]
         [Tooltip("Linear drag (0 = realistic space physics with no friction, >0 = easier control with auto-slowdown)")]
-        [SerializeField] private float linearDrag = 0f;
+        [SerializeField] private float linearDrag = 0.25f;
         [Tooltip("Angular drag (0 = realistic space physics with perpetual spin, >0 = easier control with auto-stabilization)")]
-        [SerializeField] private float angularDrag = 0f;
-        [SerializeField] [Range(0.1f, 2f)] private float movementSensitivity = 1f;
+        [SerializeField] private float angularDrag = 1.5f;
+        [SerializeField] [Range(0.1f, 2f)] private float movementSensitivity = 0.125f;
         
         [Header("Fuel Settings")]
-        [SerializeField] private float baseFuelConsumptionRate = 0.5f;
-        [SerializeField] private float boostFuelMultiplier = 3f;
+        [SerializeField] private float baseFuelConsumptionRate = 0.125f;
         
         [Header("References")]
         [SerializeField] private GameState gameState;
@@ -49,14 +47,12 @@ namespace AsteroidMiner.Entities
         private float thrustForwardInput = 0f;
         private float thrustStrafeInput = 0f;
         private float thrustVerticalInput = 0f;
-        private bool isBoosting = false;
         
         private Vector3 lastPosition;
         
         public Vector3 Velocity => rb != null ? rb.linearVelocity : Vector3.zero;
         public float CurrentSpeed => rb != null ? rb.linearVelocity.magnitude : 0f;
         public bool IsMoving => CurrentSpeed > 0.1f;
-        public bool IsBoosting => isBoosting;
         
         private void Awake()
         {
@@ -87,7 +83,6 @@ namespace AsteroidMiner.Entities
                 inputHandler.OnThrustForward += HandleThrustForwardInput;
                 inputHandler.OnThrustStrafe += HandleThrustStrafeInput;
                 inputHandler.OnThrustVertical += HandleThrustVerticalInput;
-                inputHandler.OnBoost += HandleBoostInput;
             }
         }
         
@@ -110,7 +105,6 @@ namespace AsteroidMiner.Entities
                 inputHandler.OnThrustForward -= HandleThrustForwardInput;
                 inputHandler.OnThrustStrafe -= HandleThrustStrafeInput;
                 inputHandler.OnThrustVertical -= HandleThrustVerticalInput;
-                inputHandler.OnBoost -= HandleBoostInput;
             }
         }
         
@@ -120,7 +114,6 @@ namespace AsteroidMiner.Entities
         private void HandleThrustForwardInput(float input) { thrustForwardInput = input; }
         private void HandleThrustStrafeInput(float input) { thrustStrafeInput = input; }
         private void HandleThrustVerticalInput(float input) { thrustVerticalInput = input; }
-        private void HandleBoostInput(bool boosting) { isBoosting = boosting; }
         
         private void ApplyRotation()
         {
@@ -155,12 +148,11 @@ namespace AsteroidMiner.Entities
             
             float acceleration = gameState.GetAcceleration();
             float maxSpeed = gameState.GetMaxSpeed();
-            float currentBoost = isBoosting ? boostMultiplier : 1f;
             
             Vector3 thrustLocal = new Vector3(
-                thrustStrafeInput * strafeThrust * acceleration * currentBoost * movementSensitivity,
-                thrustVerticalInput * verticalThrust * acceleration * currentBoost * movementSensitivity,
-                thrustForwardInput * baseThrust * acceleration * currentBoost * movementSensitivity
+                thrustStrafeInput * strafeThrust * acceleration * movementSensitivity,
+                thrustVerticalInput * verticalThrust * acceleration * movementSensitivity,
+                thrustForwardInput * baseThrust * acceleration * movementSensitivity
             );
             
             if (thrustLocal.sqrMagnitude > 0.01f)
@@ -170,12 +162,11 @@ namespace AsteroidMiner.Entities
                 // ForceMode.Acceleration handles deltaTime internally
                 rb.AddForce(thrustWorld, ForceMode.Acceleration);
                 
-                if (rb.linearVelocity.magnitude > maxSpeed * currentBoost)
-                    rb.linearVelocity = rb.linearVelocity.normalized * (maxSpeed * currentBoost);
+                if (rb.linearVelocity.magnitude > maxSpeed)
+                    rb.linearVelocity = rb.linearVelocity.normalized * maxSpeed;
                 
                 // Fuel consumption uses deltaTime
-                float fuelMultiplier = isBoosting ? boostFuelMultiplier : 1f;
-                float fuelConsumption = baseFuelConsumptionRate * thrustLocal.magnitude / baseThrust * fuelMultiplier * Time.fixedDeltaTime;
+                float fuelConsumption = baseFuelConsumptionRate * thrustLocal.magnitude / baseThrust * Time.fixedDeltaTime;
                 gameState.ConsumeFuel(fuelConsumption);
             }
         }
@@ -198,7 +189,6 @@ namespace AsteroidMiner.Entities
             }
             pitchInput = yawInput = rollInput = 0f;
             thrustForwardInput = thrustStrafeInput = thrustVerticalInput = 0f;
-            isBoosting = false;
         }
         
         public void ApplyExternalForce(Vector3 force)

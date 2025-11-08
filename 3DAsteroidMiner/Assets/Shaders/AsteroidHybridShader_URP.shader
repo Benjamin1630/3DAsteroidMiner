@@ -68,6 +68,9 @@ Shader "Custom/AsteroidHybridShader_URP"
         [Header(Ambient)]
         _AmbientColor ("Ambient Color", Color) = (0.1, 0.1, 0.15, 1)
         _AmbientIntensity ("Ambient Intensity", Range(0, 1)) = 0.3
+        
+        [Header(Scan Highlight)]
+        [HDR] _EmissionColor ("Emission Color", Color) = (0, 0, 0, 0)
     }
     
     SubShader
@@ -166,6 +169,8 @@ Shader "Custom/AsteroidHybridShader_URP"
                 
                 float4 _AmbientColor;
                 float _AmbientIntensity;
+                
+                float4 _EmissionColor;
             CBUFFER_END
             
             // ============================================
@@ -621,6 +626,9 @@ Shader "Custom/AsteroidHybridShader_URP"
                 
                 // Apply main lighting
                 finalColor *= lightColor * max(finalLighting, 0.3); // Minimum 30% brightness
+                
+                // Add scan highlight emission (from MaterialPropertyBlock or inspector)
+                finalColor += _EmissionColor.rgb;
                 
                 // Apply fog
                 finalColor = MixFog(finalColor, input.fogFactor);

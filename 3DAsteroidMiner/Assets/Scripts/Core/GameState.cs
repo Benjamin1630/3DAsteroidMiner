@@ -115,6 +115,37 @@ namespace AsteroidMiner.Core
         }
         
         /// <summary>
+        /// Get the scanner range based on upgrade level.
+        /// Formula: 100 + (scanRangeLevel - 1) * 100
+        /// Base: 100m, +100m per level (Level 10 = 1000m)
+        /// </summary>
+        public float GetScanRange()
+        {
+            int upgradeLevel = upgrades.ContainsKey("scanRange") ? upgrades["scanRange"] : 1;
+            return 100f + ((upgradeLevel - 1) * 100f);
+        }
+        
+        /// <summary>
+        /// Get the scanner cooldown based on upgrade level.
+        /// Formula: 10 * (1 - (scanCooldownLevel - 1) * 0.08)
+        /// Base: 10s, -8% per level (Level 10 = 2.6s)
+        /// </summary>
+        public float GetScanCooldown()
+        {
+            int upgradeLevel = upgrades.ContainsKey("scanCooldown") ? upgrades["scanCooldown"] : 1;
+            float reduction = (upgradeLevel - 1) * 0.08f;
+            return 10f * (1f - reduction);
+        }
+        
+        /// <summary>
+        /// Check if advanced scanner is unlocked (shows asteroid values).
+        /// </summary>
+        public bool HasAdvancedScanner()
+        {
+            return upgrades.ContainsKey("advancedScanner") && upgrades["advancedScanner"] > 0;
+        }
+        
+        /// <summary>
         /// Add credits with prestige bonus applied.
         /// </summary>
         public void AddCredits(int amount)

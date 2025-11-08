@@ -114,7 +114,8 @@ namespace AsteroidMiner.Entities
             baseMesh.RecalculateNormals();
             baseMesh.RecalculateTangents();
             
-            // Verify UVs were generated
+            // Verify UVs were generated (should always succeed now)
+            #if UNITY_EDITOR
             if (baseMesh.uv == null || baseMesh.uv.Length == 0)
             {
                 Debug.LogError($"ProceduralAsteroidMesh: UVs not generated for {gameObject.name}!");
@@ -123,6 +124,7 @@ namespace AsteroidMiner.Entities
             {
                 Debug.Log($"ProceduralAsteroidMesh: Generated {baseMesh.uv.Length} UVs for {baseMesh.vertexCount} vertices on {gameObject.name}");
             }
+            #endif
             
             originalMesh = baseMesh;
             
@@ -173,7 +175,13 @@ namespace AsteroidMiner.Entities
             if (!enableShrinkEffect || originalMesh == null)
                 return;
             
-            currentShrinkAmount = Mathf.Clamp01(miningProgress);
+            float newShrinkAmount = Mathf.Clamp01(miningProgress);
+            
+            // Only update if change is significant (>1%) to reduce mesh recalculations
+            if (Mathf.Abs(newShrinkAmount - currentShrinkAmount) < 0.01f)
+                return;
+            
+            currentShrinkAmount = newShrinkAmount;
             
             // Calculate scale based on mining progress
             // Shrinks from 1.0 to minShrinkScale as mining progresses
@@ -186,17 +194,24 @@ namespace AsteroidMiner.Entities
                 shrunkVertices[i] = displacedVertices[i] * scale;
             }
             
-            // Update mesh
+            // Update mesh - OPTIMIZATION: Only recalculate normals every 10% mining progress
             originalMesh.vertices = shrunkVertices;
             originalMesh.RecalculateBounds();
-            originalMesh.RecalculateNormals();
             
-            // Update collision mesh to match shrinking visual
+            // Only recalculate normals at 25%, 50%, 75%, and 100% mining
+            if (currentShrinkAmount % 0.25f < 0.02f || currentShrinkAmount > 0.98f)
+            {
+                originalMesh.RecalculateNormals();
+            }
+            
+            // Update collision mesh less frequently (every 20% or at destruction)
             if (updateCollisionMesh && meshCollider != null)
             {
-                // Force collider to update by reassigning mesh
-                meshCollider.sharedMesh = null;
-                meshCollider.sharedMesh = originalMesh;
+                if (currentShrinkAmount % 0.2f < 0.02f || currentShrinkAmount > 0.98f)
+                {
+                    meshCollider.sharedMesh = null;
+                    meshCollider.sharedMesh = originalMesh;
+                }
             }
         }
         
@@ -284,7 +299,9 @@ namespace AsteroidMiner.Entities
             mesh.vertices = vertices;
             mesh.triangles = triangles;
             
-            // No UV generation needed - shader uses object-space coordinates
+            // Generate basic UVs (required by Unity even though shader uses object-space coordinates)
+            // Use spherical mapping: UV = (atan2(z,x) / 2π, asin(y/r) / π + 0.5)
+            GenerateSphericalUVs(mesh);
             
             // Subdivide for smoother sphere
             for (int i = 0; i < subdivisionLevel; i++)
@@ -352,9 +369,33 @@ namespace AsteroidMiner.Entities
             newMesh.vertices = newVerticesList.ToArray();
             newMesh.triangles = newTrianglesList.ToArray();
             
-            // No UV generation needed - shader uses object-space coordinates
+            // Generate UVs for subdivided mesh
+            GenerateSphericalUVs(newMesh);
             
             return newMesh;
+        }
+        
+        /// <summary>
+        /// Generate spherical UV mapping for a mesh.
+        /// Required by Unity even though our shader uses object-space coordinates.
+        /// </summary>
+        private void GenerateSphericalUVs(Mesh mesh)
+        {
+            Vector3[] vertices = mesh.vertices;
+            Vector2[] uvs = new Vector2[vertices.Length];
+            
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                Vector3 normalized = vertices[i].normalized;
+                
+                // Spherical mapping: UV = (atan2(z,x) / 2π, asin(y) / π + 0.5)
+                float u = 0.5f + Mathf.Atan2(normalized.z, normalized.x) / (2f * Mathf.PI);
+                float v = 0.5f + Mathf.Asin(normalized.y) / Mathf.PI;
+                
+                uvs[i] = new Vector2(u, v);
+            }
+            
+            mesh.uv = uvs;
         }
         
         /// <summary>

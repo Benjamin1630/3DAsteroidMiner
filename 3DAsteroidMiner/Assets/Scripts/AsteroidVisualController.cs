@@ -104,9 +104,12 @@ public class AsteroidVisualController : MonoBehaviour
     /// </summary>
     public void SetTypeColor(Color color, float intensity = 1.5f, float emission = 0.3f)
     {
+        // Renderer should be cached in Awake, but guard against null
         if (asteroidRenderer == null)
-            asteroidRenderer = GetComponent<Renderer>();
-        if (asteroidRenderer == null) return;
+        {
+            Debug.LogWarning($"AsteroidVisualController.SetTypeColor: Renderer is null on {gameObject.name}");
+            return;
+        }
         
         asteroidRenderer.GetPropertyBlock(propertyBlock);
         propertyBlock.SetColor(TypeColorID, color);
@@ -145,9 +148,12 @@ public class AsteroidVisualController : MonoBehaviour
     /// </summary>
     public void RandomizeHolePattern(float variationAmount = 0.15f)
     {
-        if (asteroidRenderer == null)
-            asteroidRenderer = GetComponent<Renderer>();
-        if (asteroidRenderer == null || asteroidRenderer.sharedMaterial == null) return;
+        // Renderer should be cached in Awake
+        if (asteroidRenderer == null || asteroidRenderer.sharedMaterial == null)
+        {
+            Debug.LogWarning($"AsteroidVisualController.RandomizeHolePattern: Renderer or material is null on {gameObject.name}");
+            return;
+        }
         
         // Get material's default hole configuration
         Material mat = asteroidRenderer.sharedMaterial;
@@ -174,9 +180,12 @@ public class AsteroidVisualController : MonoBehaviour
     /// </summary>
     public void SetHoleProperties(float density, float size)
     {
+        // Renderer should be cached in Awake
         if (asteroidRenderer == null)
-            asteroidRenderer = GetComponent<Renderer>();
-        if (asteroidRenderer == null) return;
+        {
+            Debug.LogWarning($"AsteroidVisualController.SetHoleProperties: Renderer is null on {gameObject.name}");
+            return;
+        }
         
         asteroidRenderer.GetPropertyBlock(propertyBlock);
         propertyBlock.SetFloat(HoleDensityID, density);

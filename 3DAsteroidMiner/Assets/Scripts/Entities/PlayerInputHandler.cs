@@ -5,27 +5,25 @@ using UnityEngine.InputSystem;
 namespace AsteroidMiner.Entities
 {
     /// <summary>
-    /// Handles all player input using Unity's new Input System.
+    /// Handles all player input using Unity's new Input System with InputActionAsset.
     /// Implements 6 Degrees of Freedom (6DoF) space flight controls.
     /// Supports keyboard, mouse, and gamepad controls similar to Elite Dangerous/Star Citizen.
     /// </summary>
     public class PlayerInputHandler : MonoBehaviour
     {
-        // Input Actions - 6DoF Movement
-        private InputAction pitchAction;        // Mouse Y / Right Stick Y
-        private InputAction yawAction;          // Mouse X / Right Stick X
-        private InputAction rollAction;         // Q/E keys / Shoulder buttons
-        private InputAction thrustForwardAction; // W/S keys / Left Stick Y
-        private InputAction thrustStrafeAction;  // A/D keys / Left Stick X
-        private InputAction thrustVerticalAction; // Space/Ctrl / Triggers
+        [Header("Input System")]
+        [SerializeField] private InputActionAsset inputActions;
         
-        // Input Actions - Other
-        private InputAction boostAction;
-        private InputAction mineAction;
-        private InputAction scannerAction;
-        private InputAction dockAction;
-        private InputAction pauseAction;
-        private InputAction mouseControlAction; // Hold to enable mouse flight
+        // Input Actions from asset
+        private InputAction moveAction;          // W/S/A/D / Left Stick
+        private InputAction lookAction;          // Mouse Delta / Right Stick
+        private InputAction rotateAction;        // Q/E Roll / Shoulder Buttons
+        private InputAction upDownAction;        // Space/Ctrl / Triggers
+        private InputAction mineAction;          // Left Mouse / X Button
+        private InputAction scanAction;          // F / B Button
+        private InputAction interactAction;      // E (Hold) / A Button
+        private InputAction spaceBrakeAction;    // X / Right Stick Press
+        private InputAction pauseAction;         // Escape / Start
         
         // Events for 6DoF input
         public event Action<float> OnPitch;           // -1 to 1 (down to up)
@@ -36,7 +34,6 @@ namespace AsteroidMiner.Entities
         public event Action<float> OnThrustVertical;  // -1 to 1 (down to up)
         
         // Events for other input
-        public event Action<bool> OnBoost;
         public event Action OnMineStarted;
         public event Action OnMineCanceled;
         public event Action OnScannerPressed;
@@ -73,16 +70,19 @@ namespace AsteroidMiner.Entities
         {
             if (!isEnabled) return;
             
-            // Read continuous 6DoF input
-            OnPitch?.Invoke(pitchAction.ReadValue<float>());
-            OnYaw?.Invoke(yawAction.ReadValue<float>());
-            OnRoll?.Invoke(rollAction.ReadValue<float>());
-            OnThrustForward?.Invoke(thrustForwardAction.ReadValue<float>());
-            OnThrustStrafe?.Invoke(thrustStrafeAction.ReadValue<float>());
-            OnThrustVertical?.Invoke(thrustVerticalAction.ReadValue<float>());
+            // Read continuous 6DoF input from InputActionAsset
+            Vector2 moveInput = moveAction.ReadValue<Vector2>();
+            Vector2 lookInput = lookAction.ReadValue<Vector2>();
+            float rollInput = rotateAction.ReadValue<float>();
+            float upDownInput = upDownAction.ReadValue<float>();
             
-            // Update mouse flight state
-            mouseFlightEnabled = mouseControlAction.IsPressed();
+            // Invoke events with processed values
+            OnThrustStrafe?.Invoke(moveInput.x);        // Left/Right from Move X
+            OnThrustForward?.Invoke(moveInput.y);       // Forward/Back from Move Y
+            OnYaw?.Invoke(lookInput.x);                 // Yaw from Look X
+            OnPitch?.Invoke(lookInput.y);               // Pitch from Look Y
+            OnRoll?.Invoke(rollInput);                  // Roll from Rotate
+            OnThrustVertical?.Invoke(upDownInput);      // Up/Down from Up/Down action
         }
         
         #endregion
@@ -90,97 +90,62 @@ namespace AsteroidMiner.Entities
         #region Input System Setup
         
         /// <summary>
-        /// Initialize all input actions with 6DoF bindings.
+        /// Initialize all input actions from InputActionAsset.
         /// </summary>
         private void InitializeInputActions()
         {
-            // ===== ROTATION CONTROLS =====
+            if (inputActions == null)
+            {
+                Debug.LogError("PlayerInputHandler: InputActionAsset not assigned! Please assign InputSystem_Actions in inspector.");
+                return;
+            }
             
-            // Pitch (nose up/down) - Mouse Y / Right Stick Y
-            pitchAction = new InputAction("Pitch", InputActionType.Value);
-            pitchAction.AddBinding("<Mouse>/delta/y", processors: "scale(factor=0.05)");
-            pitchAction.AddBinding("<Gamepad>/rightStick/y");
+            // Get Player action map
+            InputActionMap playerMap = inputActions.FindActionMap("Player");
+            if (playerMap == null)
+            {
+                Debug.LogError("PlayerInputHandler: Could not find 'Player' action map in InputActionAsset!");
+                return;
+            }
             
-            // Yaw (nose left/right) - Mouse X / Right Stick X
-            yawAction = new InputAction("Yaw", InputActionType.Value);
-            yawAction.AddBinding("<Mouse>/delta/x", processors: "scale(factor=0.05)");
-            yawAction.AddBinding("<Gamepad>/rightStick/x");
+            // Get actions from asset
+            moveAction = playerMap.FindAction("Move");
+            lookAction = playerMap.FindAction("Look");
+            rotateAction = playerMap.FindAction("Rotate");
+            upDownAction = playerMap.FindAction("Up/Down");
+            mineAction = playerMap.FindAction("Mine");
+            scanAction = playerMap.FindAction("Scan");
+            interactAction = playerMap.FindAction("Interact");
+            spaceBrakeAction = playerMap.FindAction("SpaceBrake");
+            pauseAction = playerMap.FindAction("Pause");
             
-            // Roll (barrel roll) - Q/E / Shoulder Buttons
-            rollAction = new InputAction("Roll", InputActionType.Value);
-            rollAction.AddCompositeBinding("1DAxis")
-                .With("Negative", "<Keyboard>/q")
-                .With("Positive", "<Keyboard>/e");
-            rollAction.AddCompositeBinding("1DAxis")
-                .With("Negative", "<Gamepad>/leftShoulder")
-                .With("Positive", "<Gamepad>/rightShoulder");
-            
-            // ===== TRANSLATION CONTROLS =====
-            
-            // Forward/Backward Thrust - W/S / Left Stick Y
-            thrustForwardAction = new InputAction("ThrustForward", InputActionType.Value);
-            thrustForwardAction.AddCompositeBinding("1DAxis")
-                .With("Negative", "<Keyboard>/s")
-                .With("Positive", "<Keyboard>/w");
-            thrustForwardAction.AddBinding("<Gamepad>/leftStick/y");
-            
-            // Strafe Left/Right - A/D / Left Stick X
-            thrustStrafeAction = new InputAction("ThrustStrafe", InputActionType.Value);
-            thrustStrafeAction.AddCompositeBinding("1DAxis")
-                .With("Negative", "<Keyboard>/a")
-                .With("Positive", "<Keyboard>/d");
-            thrustStrafeAction.AddBinding("<Gamepad>/leftStick/x");
-            
-            // Vertical Thrust Up/Down - Space/Ctrl / Triggers
-            thrustVerticalAction = new InputAction("ThrustVertical", InputActionType.Value);
-            thrustVerticalAction.AddCompositeBinding("1DAxis")
-                .With("Negative", "<Keyboard>/leftCtrl")
-                .With("Positive", "<Keyboard>/space");
-            thrustVerticalAction.AddCompositeBinding("1DAxis")
-                .With("Negative", "<Gamepad>/leftTrigger")
-                .With("Positive", "<Gamepad>/rightTrigger");
-            
-            // ===== ACTION CONTROLS =====
-            
-            // Boost - Left Shift / Left Stick Click
-            boostAction = new InputAction("Boost", InputActionType.Button);
-            boostAction.AddBinding("<Keyboard>/leftShift");
-            boostAction.AddBinding("<Gamepad>/leftStickPress");
-            
-            // Mouse Control Toggle - Right Mouse Button
-            mouseControlAction = new InputAction("MouseControl", InputActionType.Button);
-            mouseControlAction.AddBinding("<Mouse>/rightButton");
-            
-            // Mining (Left Mouse when not in mouse control / X Button)
-            // Mining (Left Mouse when not in mouse control / X Button)
-            mineAction = new InputAction("Mine", InputActionType.Button);
-            mineAction.AddBinding("<Mouse>/leftButton");
-            mineAction.AddBinding("<Gamepad>/buttonWest");
-            
-            // Scanner (E / Middle Mouse / Y Button)
-            scannerAction = new InputAction("Scanner", InputActionType.Button);
-            scannerAction.AddBinding("<Keyboard>/r");
-            scannerAction.AddBinding("<Mouse>/middleButton");
-            scannerAction.AddBinding("<Gamepad>/buttonNorth");
-            
-            // Dock (F / B Button)
-            dockAction = new InputAction("Dock", InputActionType.Button);
-            dockAction.AddBinding("<Keyboard>/f");
-            dockAction.AddBinding("<Gamepad>/buttonSouth");
-            
-            // Pause (Escape / Start Button)
-            pauseAction = new InputAction("Pause", InputActionType.Button);
-            pauseAction.AddBinding("<Keyboard>/escape");
-            pauseAction.AddBinding("<Gamepad>/start");
+            // Validate required actions
+            if (moveAction == null) Debug.LogError("PlayerInputHandler: 'Move' action not found!");
+            if (lookAction == null) Debug.LogError("PlayerInputHandler: 'Look' action not found!");
+            if (rotateAction == null) Debug.LogError("PlayerInputHandler: 'Rotate' action not found!");
+            if (upDownAction == null) Debug.LogError("PlayerInputHandler: 'Up/Down' action not found!");
             
             // Subscribe to button events
-            boostAction.started += OnBoostStartedCallback;
-            boostAction.canceled += OnBoostCanceledCallback;
-            mineAction.started += OnMineStartedCallback;
-            mineAction.canceled += OnMineCanceledCallback;
-            scannerAction.performed += OnScannerCallback;
-            dockAction.performed += OnDockCallback;
-            pauseAction.performed += OnPauseCallback;
+            if (mineAction != null)
+            {
+                mineAction.started += OnMineStartedCallback;
+                mineAction.canceled += OnMineCanceledCallback;
+            }
+            
+            if (scanAction != null)
+            {
+                scanAction.performed += OnScannerCallback;
+            }
+            
+            if (interactAction != null)
+            {
+                interactAction.performed += OnDockCallback;
+            }
+            
+            if (pauseAction != null)
+            {
+                pauseAction.performed += OnPauseCallback;
+            }
         }
         
         /// <summary>
@@ -188,18 +153,10 @@ namespace AsteroidMiner.Entities
         /// </summary>
         private void EnableInputActions()
         {
-            pitchAction?.Enable();
-            yawAction?.Enable();
-            rollAction?.Enable();
-            thrustForwardAction?.Enable();
-            thrustStrafeAction?.Enable();
-            thrustVerticalAction?.Enable();
-            boostAction?.Enable();
-            mouseControlAction?.Enable();
-            mineAction?.Enable();
-            scannerAction?.Enable();
-            dockAction?.Enable();
-            pauseAction?.Enable();
+            if (inputActions != null)
+            {
+                inputActions.Enable();
+            }
         }
         
         /// <summary>
@@ -207,18 +164,10 @@ namespace AsteroidMiner.Entities
         /// </summary>
         private void DisableInputActions()
         {
-            pitchAction?.Disable();
-            yawAction?.Disable();
-            rollAction?.Disable();
-            thrustForwardAction?.Disable();
-            thrustStrafeAction?.Disable();
-            thrustVerticalAction?.Disable();
-            boostAction?.Disable();
-            mouseControlAction?.Disable();
-            mineAction?.Disable();
-            scannerAction?.Disable();
-            dockAction?.Disable();
-            pauseAction?.Disable();
+            if (inputActions != null)
+            {
+                inputActions.Disable();
+            }
         }
         
         /// <summary>
@@ -227,55 +176,31 @@ namespace AsteroidMiner.Entities
         private void DisposeInputActions()
         {
             // Unsubscribe from events
-            if (boostAction != null)
-            {
-                boostAction.started -= OnBoostStartedCallback;
-                boostAction.canceled -= OnBoostCanceledCallback;
-            }
-            
             if (mineAction != null)
             {
                 mineAction.started -= OnMineStartedCallback;
                 mineAction.canceled -= OnMineCanceledCallback;
             }
             
-            if (scannerAction != null)
-                scannerAction.performed -= OnScannerCallback;
+            if (scanAction != null)
+            {
+                scanAction.performed -= OnScannerCallback;
+            }
             
-            if (dockAction != null)
-                dockAction.performed -= OnDockCallback;
+            if (interactAction != null)
+            {
+                interactAction.performed -= OnDockCallback;
+            }
             
             if (pauseAction != null)
+            {
                 pauseAction.performed -= OnPauseCallback;
-            
-            // Dispose actions
-            pitchAction?.Dispose();
-            yawAction?.Dispose();
-            rollAction?.Dispose();
-            thrustForwardAction?.Dispose();
-            thrustStrafeAction?.Dispose();
-            thrustVerticalAction?.Dispose();
-            boostAction?.Dispose();
-            mouseControlAction?.Dispose();
-            mineAction?.Dispose();
-            scannerAction?.Dispose();
-            dockAction?.Dispose();
-            pauseAction?.Dispose();
+            }
         }
         
         #endregion
         
         #region Input Callbacks
-        
-        private void OnBoostStartedCallback(InputAction.CallbackContext context)
-        {
-            OnBoost?.Invoke(true);
-        }
-        
-        private void OnBoostCanceledCallback(InputAction.CallbackContext context)
-        {
-            OnBoost?.Invoke(false);
-        }
         
         private void OnMineStartedCallback(InputAction.CallbackContext context)
         {
@@ -328,14 +253,6 @@ namespace AsteroidMiner.Entities
         }
         
         /// <summary>
-        /// Check if boost is currently active.
-        /// </summary>
-        public bool IsBoostPressed()
-        {
-            return boostAction != null && boostAction.IsPressed();
-        }
-        
-        /// <summary>
         /// Check if mouse flight control is currently enabled.
         /// </summary>
         public bool IsMouseFlightEnabled()
@@ -348,7 +265,7 @@ namespace AsteroidMiner.Entities
         /// </summary>
         public float GetPitch()
         {
-            return pitchAction != null ? pitchAction.ReadValue<float>() : 0f;
+            return lookAction != null ? lookAction.ReadValue<Vector2>().y : 0f;
         }
         
         /// <summary>
@@ -356,7 +273,7 @@ namespace AsteroidMiner.Entities
         /// </summary>
         public float GetYaw()
         {
-            return yawAction != null ? yawAction.ReadValue<float>() : 0f;
+            return lookAction != null ? lookAction.ReadValue<Vector2>().x : 0f;
         }
         
         /// <summary>
@@ -364,7 +281,7 @@ namespace AsteroidMiner.Entities
         /// </summary>
         public float GetRoll()
         {
-            return rollAction != null ? rollAction.ReadValue<float>() : 0f;
+            return rotateAction != null ? rotateAction.ReadValue<float>() : 0f;
         }
         
         /// <summary>
@@ -372,7 +289,7 @@ namespace AsteroidMiner.Entities
         /// </summary>
         public float GetThrustForward()
         {
-            return thrustForwardAction != null ? thrustForwardAction.ReadValue<float>() : 0f;
+            return moveAction != null ? moveAction.ReadValue<Vector2>().y : 0f;
         }
         
         /// <summary>
@@ -380,7 +297,7 @@ namespace AsteroidMiner.Entities
         /// </summary>
         public float GetThrustStrafe()
         {
-            return thrustStrafeAction != null ? thrustStrafeAction.ReadValue<float>() : 0f;
+            return moveAction != null ? moveAction.ReadValue<Vector2>().x : 0f;
         }
         
         /// <summary>
@@ -388,7 +305,7 @@ namespace AsteroidMiner.Entities
         /// </summary>
         public float GetThrustVertical()
         {
-            return thrustVerticalAction != null ? thrustVerticalAction.ReadValue<float>() : 0f;
+            return upDownAction != null ? upDownAction.ReadValue<float>() : 0f;
         }
         
         #endregion

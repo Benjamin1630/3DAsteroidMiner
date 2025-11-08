@@ -36,6 +36,8 @@ namespace AsteroidMiner.Entities
         private Vector2 lastMoveInput = Vector2.zero;
         private float currentTiltX = 0f;
         private float currentTiltZ = 0f;
+        private float lastEngineIntensity = -1f; // Track last intensity to avoid redundant updates
+        private float lastSpeedLinesIntensity = -1f;
         
         #region Unity Lifecycle
         
@@ -87,6 +89,9 @@ namespace AsteroidMiner.Entities
             // Calculate engine intensity based on speed
             float engineIntensity = Mathf.Clamp01(currentSpeed / 20f);
             
+            // Only update if intensity changed significantly (>5%)
+            bool intensityChanged = Mathf.Abs(engineIntensity - lastEngineIntensity) > 0.05f;
+            
             // Update particles
             if (isMoving && gameState != null && gameState.HasFuel())
             {
@@ -96,9 +101,13 @@ namespace AsteroidMiner.Entities
                 if (rightEngineParticles != null && !rightEngineParticles.isPlaying)
                     rightEngineParticles.Play();
                 
-                // Adjust emission rate based on speed
-                UpdateParticleEmission(leftEngineParticles, engineIntensity);
-                UpdateParticleEmission(rightEngineParticles, engineIntensity);
+                // Adjust emission rate only when intensity changed significantly
+                if (intensityChanged)
+                {
+                    UpdateParticleEmission(leftEngineParticles, engineIntensity);
+                    UpdateParticleEmission(rightEngineParticles, engineIntensity);
+                    lastEngineIntensity = engineIntensity;
+                }
             }
             else
             {
@@ -107,9 +116,11 @@ namespace AsteroidMiner.Entities
                 
                 if (rightEngineParticles != null && rightEngineParticles.isPlaying)
                     rightEngineParticles.Stop();
+                
+                lastEngineIntensity = 0f;
             }
             
-            // Update engine lights
+            // Update engine lights (smooth lerp is fine here)
             float targetLightIntensity = isMoving ? engineIntensity * maxEngineLightIntensity : 0f;
             
             if (leftEngineLight != null)
@@ -175,14 +186,22 @@ namespace AsteroidMiner.Entities
                     speedLinesParticles.Play();
                 
                 // Adjust intensity based on speed
-                var emission = speedLinesParticles.emission;
                 float intensity = Mathf.Clamp01((currentSpeed - speedLinesThreshold) / speedLinesThreshold);
-                emission.rateOverTime = intensity * 100f;
+                
+                // Only update emission if intensity changed significantly (>10%)
+                if (Mathf.Abs(intensity - lastSpeedLinesIntensity) > 0.1f)
+                {
+                    var emission = speedLinesParticles.emission;
+                    emission.rateOverTime = intensity * 100f;
+                    lastSpeedLinesIntensity = intensity;
+                }
             }
             else
             {
                 if (speedLinesParticles.isPlaying)
                     speedLinesParticles.Stop();
+                
+                lastSpeedLinesIntensity = 0f;
             }
         }
         

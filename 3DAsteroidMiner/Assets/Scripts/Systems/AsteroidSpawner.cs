@@ -25,6 +25,7 @@ namespace AsteroidMiner.Systems
         
         [Header("Spawn Configuration")]
         [SerializeField] private float spawnCheckInterval = 0.1f; // Check 10x per second
+        [SerializeField] private float despawnCheckInterval = 0.5f; // Check despawning 2x per second (performance optimization)
         [SerializeField] private float minDistanceFromPlayer = 100f;
         [SerializeField] private float maxDistanceFromPlayer = 500f;
         [SerializeField] private float despawnDistance = 700f;
@@ -36,6 +37,7 @@ namespace AsteroidMiner.Systems
         // ===== Cached Data =====
         private List<GameObject> spawnedAsteroids = new List<GameObject>();
         private float spawnTimer = 0f;
+        private float despawnTimer = 0f; // Separate timer for despawn checks
         private int currentSector = 1;
         private int minAsteroidCount; // Set from pool's initialPoolSize
         private int maxAsteroidCount; // Set from pool's maxPoolSize
@@ -114,8 +116,13 @@ namespace AsteroidMiner.Systems
                 TrySpawnAsteroid();
             }
             
-            // Despawn distant asteroids
-            DespawnDistantAsteroids();
+            // Despawn distant asteroids less frequently (performance optimization)
+            despawnTimer += Time.deltaTime;
+            if (despawnTimer >= despawnCheckInterval)
+            {
+                despawnTimer = 0f;
+                DespawnDistantAsteroids();
+            }
         }
         
         // ===== Spawning Logic =====
