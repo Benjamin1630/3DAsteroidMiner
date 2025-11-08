@@ -226,7 +226,7 @@
                     "id": "c1f7a91b-d0fd-4a62-997e-7fb9b69bf235",
                     "path": "<Gamepad>/rightStick",
                     "interactions": "",
-                    "processors": "",
+                    "processors": "ScaleVector2(x=300,y=300)",
                     "groups": ";Gamepad",
                     "action": "Look",
                     "isComposite": false,
@@ -345,7 +345,7 @@
                 {
                     "name": "negative",
                     "id": "380fddfd-86e9-467a-aa23-51494db47bf3",
-                    "path": "<Keyboard>/e",
+                    "path": "<Keyboard>/q",
                     "interactions": "",
                     "processors": "",
                     "groups": ";Keyboard&Mouse",
@@ -356,7 +356,7 @@
                 {
                     "name": "positive",
                     "id": "5fda3939-c560-4353-9fdb-4f6587299eb6",
-                    "path": "<Keyboard>/q",
+                    "path": "<Keyboard>/e",
                     "interactions": "",
                     "processors": "",
                     "groups": ";Keyboard&Mouse",
@@ -378,7 +378,7 @@
                 {
                     "name": "negative",
                     "id": "f5c3af9d-0820-45e9-b9bb-4a74319bbd29",
-                    "path": "<Gamepad>/rightShoulder",
+                    "path": "<Gamepad>/leftShoulder",
                     "interactions": "",
                     "processors": "",
                     "groups": ";Gamepad",
@@ -389,7 +389,7 @@
                 {
                     "name": "positive",
                     "id": "86660d31-e654-45b6-8419-2c684cc66daa",
-                    "path": "<Gamepad>/leftShoulder",
+                    "path": "<Gamepad>/rightShoulder",
                     "interactions": "",
                     "processors": "",
                     "groups": ";Gamepad",

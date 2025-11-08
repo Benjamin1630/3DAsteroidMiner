@@ -148,7 +148,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AsteroidVisualController
   asteroidMaterial: {fileID: 2100000, guid: 8c0ff4c79682ad14582020c6876bae52, type: 2}
-  asteroidRenderer: {fileID: 0}
+  asteroidRenderer: {fileID: 7592458090118644964}
   typeData: {fileID: 0}
 --- !u!1 &5986663863565348053
 GameObject:

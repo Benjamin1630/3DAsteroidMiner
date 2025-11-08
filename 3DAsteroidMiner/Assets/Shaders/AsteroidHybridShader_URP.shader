@@ -292,12 +292,12 @@ Shader "Custom/AsteroidHybridShader_URP"
                 
                 // Crater bowl (inverted distance)
                 float craterBowl = 1.0 - smoothstep(0.0, _CraterSize, craterDist);
-                craterBowl = pow(craterBowl, 2.0); // Sharper falloff
+                craterBowl = pow(saturate(craterBowl), 2.0); // Sharper falloff
                 
                 // Crater rim (ring around edge)
                 float rimDist = abs(craterDist - _CraterSize * 0.7);
                 float craterRim = 1.0 - smoothstep(0.0, _CraterSize * 0.3, rimDist);
-                craterRim = pow(craterRim, _CraterRimSharpness);
+                craterRim = pow(saturate(craterRim), _CraterRimSharpness);
                 
                 result.depth = craterBowl * _CraterDepth;
                 result.rimHeight = craterRim * _CraterRimHeight;

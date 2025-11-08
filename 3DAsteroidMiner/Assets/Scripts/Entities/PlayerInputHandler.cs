@@ -261,6 +261,36 @@ namespace AsteroidMiner.Entities
         }
         
         /// <summary>
+        /// Check if the player is currently using mouse for looking around.
+        /// Returns true if the last input device used for the Look action was a mouse.
+        /// </summary>
+        public bool IsUsingMouse()
+        {
+            if (lookAction == null) return false;
+            
+            // Check if the active control is from a mouse/pointer device
+            var activeControl = lookAction.activeControl;
+            if (activeControl == null) return false;
+            
+            // Check if the device is a Mouse or Pointer
+            return activeControl.device is Mouse || activeControl.device is Pointer;
+        }
+        
+        /// <summary>
+        /// Check if the player is currently using a gamepad for looking around.
+        /// Returns true if the last input device used for the Look action was a gamepad.
+        /// </summary>
+        public bool IsUsingGamepad()
+        {
+            if (lookAction == null) return false;
+            
+            var activeControl = lookAction.activeControl;
+            if (activeControl == null) return false;
+            
+            return activeControl.device is Gamepad;
+        }
+        
+        /// <summary>
         /// Get current pitch input value (-1 to 1).
         /// </summary>
         public float GetPitch()

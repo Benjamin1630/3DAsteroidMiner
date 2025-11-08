@@ -22,7 +22,13 @@ namespace AsteroidMiner.Entities
         [SerializeField] private float pitchSpeed = 20f;
         [SerializeField] private float yawSpeed = 20f;
         [SerializeField] private float rollSpeed = 30f;
-        [SerializeField] private float mouseSensitivity = 0.05f;
+        
+        [Header("Look Sensitivity")]
+        [Tooltip("Mouse look sensitivity (for mouse delta input)")]
+        [SerializeField] [Range(0.01f, 2f)] private float mouseLookSensitivity = 0.5f;
+        [Tooltip("Gamepad look sensitivity (for right stick input)")]
+        [SerializeField] [Range(0.001f, 5f)] private float gamepadLookSensitivity = 1.5f;
+        
         [SerializeField] [Range(0.1f, 2f)] private float rotationSensitivity = 0.125f;
         
         [Header("Physics Settings")]
@@ -123,10 +129,18 @@ namespace AsteroidMiner.Entities
             float yaw = yawSpeed * rotationSensitivity;
             float roll = rollSpeed * rotationSensitivity;
             
-            if (inputHandler.IsMouseFlightEnabled())
+            // Apply different sensitivity based on input device
+            if (inputHandler.IsUsingMouse())
             {
-                pitch *= mouseSensitivity;
-                yaw *= mouseSensitivity;
+                // Mouse provides delta values (pixels moved), needs lower sensitivity
+                pitch *= mouseLookSensitivity;
+                yaw *= mouseLookSensitivity;
+            }
+            else
+            {
+                // Gamepad provides normalized values (-1 to 1), needs higher sensitivity
+                pitch *= gamepadLookSensitivity;
+                yaw *= gamepadLookSensitivity;
             }
             
             Vector3 torque = new Vector3(-pitchInput * pitch, yawInput * yaw, -rollInput * roll);

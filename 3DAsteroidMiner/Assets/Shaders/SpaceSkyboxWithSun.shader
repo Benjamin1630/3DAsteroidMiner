@@ -16,6 +16,9 @@ Shader "Custom/SpaceSkyboxWithSun"
         _StarSize ("Star Size", Range(0.0001, 0.01)) = 0.003
         _StarColorVariation ("Star Color Variation", Range(0, 1)) = 0.3
         _AmbientStarlight ("Ambient Starlight", Range(0, 1.5)) = 0.25
+        
+        [Header(Fog Integration)]
+        _FogBlendStrength ("Fog Blend Strength", Range(0, 1)) = 0.5
     }
     
     SubShader
@@ -29,6 +32,7 @@ Shader "Custom/SpaceSkyboxWithSun"
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            #pragma multi_compile_fog
             #include "UnityCG.cginc"
             
             struct appdata
@@ -41,6 +45,7 @@ Shader "Custom/SpaceSkyboxWithSun"
             {
                 float4 pos : SV_POSITION;
                 float3 viewDir : TEXCOORD0;
+                UNITY_FOG_COORDS(1)
             };
             
             float4 _SunColor;
@@ -57,6 +62,8 @@ Shader "Custom/SpaceSkyboxWithSun"
             float _StarSize;
             float _StarColorVariation;
             float _AmbientStarlight;
+            
+            float _FogBlendStrength;
             
             // Hash function for pseudo-random generation
             float hash(float3 p)
@@ -127,6 +134,7 @@ Shader "Custom/SpaceSkyboxWithSun"
                 v2f o;
                 o.pos = UnityObjectToClipPos(v.vertex);
                 o.viewDir = v.texcoord;
+                UNITY_TRANSFER_FOG(o, o.pos);
                 return o;
             }
             
@@ -169,6 +177,17 @@ Shader "Custom/SpaceSkyboxWithSun"
                 // Combine all elements: texture starfield + procedural stars + ambient from stars + sun
                 // Note: No base ambient color - space stays black except where stars exist
                 float3 finalColor = starfield + proceduralStarfield + ambientContribution + sunColor;
+                
+                // ============ FOG INTEGRATION ============
+                // Blend fog based on viewing angle (more fog at horizon, less when looking up/down)
+                float viewDirY = normalize(viewDir).y;
+                float horizonFogFactor = saturate(1.0 - abs(viewDirY) * 2.0); // More fog at horizon (y=0)
+                
+                // Apply Unity's fog color with custom blending
+                #ifdef UNITY_PASS_FORWARDBASE
+                    float fogAmount = horizonFogFactor * _FogBlendStrength;
+                    finalColor = lerp(finalColor, unity_FogColor.rgb, fogAmount);
+                #endif
                 
                 return fixed4(finalColor, 1.0);
             }

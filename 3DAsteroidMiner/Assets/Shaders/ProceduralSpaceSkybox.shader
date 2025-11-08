@@ -1,4 +1,4 @@
-Shader "Custom/ProceduralSpaceSkybox"
+Shader "Skybox/ProceduralSpaceSkybox"
 {
     Properties
     {
@@ -9,11 +9,10 @@ Shader "Custom/ProceduralSpaceSkybox"
         _SunGlow ("Sun Glow", Range(0, 2)) = 0.5
         _SunDirection ("Sun Direction", Vector) = (0, 0.5, 0.5, 0)
         
-        [Header(Background Texture Options)]
-        [KeywordEnum(None, Texture2D, Cubemap)] _BackgroundMode("Background Mode", Float) = 0
-        _StarfieldTex ("Starfield Texture 2D", 2D) = "black" {}
-        _StarfieldCube ("Starfield Cubemap", Cube) = "black" {}
-        _BackgroundIntensity ("Background Intensity", Range(0, 2)) = 0.5
+        [Header(Cubemap Background is Optional)]
+        _StarfieldCube ("Starfield Cubemap (Optional)", Cube) = "black" {}
+        _CubemapIntensity ("Cubemap Intensity", Range(0, 2)) = 0.5
+        [Toggle(USE_CUBEMAP)] _UseCubemap ("Use Cubemap", Float) = 0
         
         [Header(Star Properties)]
         _StarDensity ("Star Density", Range(100, 2000)) = 800
@@ -30,7 +29,7 @@ Shader "Custom/ProceduralSpaceSkybox"
     
     SubShader
     {
-        Tags { "Queue"="Background" "RenderType"="Background" "PreviewType"="Skybox" }
+        Tags { "Queue"="Background" "RenderType"="Background" "PreviewType"="Skybox" "IgnoreProjector"="True" }
         Cull Off
         ZWrite Off
         
@@ -39,7 +38,7 @@ Shader "Custom/ProceduralSpaceSkybox"
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
-            #pragma shader_feature _BACKGROUNDMODE_NONE _BACKGROUNDMODE_TEXTURE2D _BACKGROUNDMODE_CUBEMAP
+            #pragma shader_feature USE_CUBEMAP
             #include "UnityCG.cginc"
             
             struct appdata
@@ -61,10 +60,9 @@ Shader "Custom/ProceduralSpaceSkybox"
             uniform float _SunGlow;
             uniform float3 _SunDirection;
             
-            // Background textures
-            uniform sampler2D _StarfieldTex;
+            // Cubemap background
             uniform samplerCUBE _StarfieldCube;
-            uniform float _BackgroundIntensity;
+            uniform float _CubemapIntensity;
             
             uniform float _StarDensity;
             uniform float _StarBrightness;
@@ -193,7 +191,10 @@ Shader "Custom/ProceduralSpaceSkybox"
             v2f vert (appdata v)
             {
                 v2f o;
+                
+                // Standard skybox vertex transformation
                 o.pos = UnityObjectToClipPos(v.vertex);
+                
                 o.viewDir = v.texcoord;
                 return o;
             }
@@ -226,24 +227,29 @@ Shader "Custom/ProceduralSpaceSkybox"
                 // ============ NEBULA ============
                 float3 nebulaColor = nebula(viewDir);
                 
-                // ============ BACKGROUND TEXTURE/CUBEMAP ============
-                float3 backgroundTex = float3(0, 0, 0);
+                // ============ CUBEMAP BACKGROUND (Optional) ============
+                float3 cubemapColor = float3(0, 0, 0);
                 
-                #if defined(_BACKGROUNDMODE_TEXTURE2D)
-                    // Convert view direction to spherical UV coordinates
-                    float2 skyUV = float2(
-                        atan2(viewDir.x, viewDir.z) / (2.0 * 3.14159265) + 0.5,
-                        asin(viewDir.y) / 3.14159265 + 0.5
-                    );
-                    backgroundTex = tex2D(_StarfieldTex, skyUV).rgb * _BackgroundIntensity;
-                #elif defined(_BACKGROUNDMODE_CUBEMAP)
+                #ifdef USE_CUBEMAP
                     // Sample cubemap directly with view direction
-                    backgroundTex = texCUBE(_StarfieldCube, viewDir).rgb * _BackgroundIntensity;
+                    cubemapColor = texCUBE(_StarfieldCube, viewDir).rgb * _CubemapIntensity;
                 #endif
                 
                 // ============ COMBINE ============
-                // Deep space is pure black, only stars and sun provide light
-                float3 finalColor = backgroundTex + nebulaColor + stars + starAmbient + sunColor;
+                // Start with pure black space
+                float3 finalColor = float3(0, 0, 0);
+                
+                // Add cubemap as base layer (farthest)
+                finalColor += cubemapColor;
+                
+                // Add nebula (mid-distance)
+                finalColor += nebulaColor;
+                
+                // Add stars and ambient (closer)
+                finalColor += stars + starAmbient;
+                
+                // Add sun (closest/brightest)
+                finalColor += sunColor;
                 
                 return fixed4(finalColor, 1.0);
             }
