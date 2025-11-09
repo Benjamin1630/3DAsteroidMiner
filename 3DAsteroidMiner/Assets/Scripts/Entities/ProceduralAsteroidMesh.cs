@@ -217,56 +217,42 @@ namespace AsteroidMiner.Entities
         }
         
         /// <summary>
-        /// Remove a "chunk" from the asteroid by shrinking 8 neighboring vertices toward center.
+        /// Remove a "chunk" from the asteroid by shrinking ALL vertices toward center.
         /// Called at each integer health threshold (10→9, 9→8, etc).
-        /// Creates localized damage effect rather than uniform shrinking.
+        /// Creates uniform shrinking effect as asteroid is mined.
+        /// Minimum size is capped at 25% of original size to keep asteroids targetable.
+        /// IMPORTANT: Always calculates from original displaced vertices to avoid compounding shrinkage.
         /// </summary>
-        /// <param name="shrinkFactor">0-1, how much to shrink (0=no shrink, 1=maximum shrink)</param>
+        /// <param name="shrinkFactor">0-1, how much to shrink (0=no shrink, 1=maximum shrink to 25% size)</param>
         public void RemoveChunk(float shrinkFactor)
         {
             if (originalMesh == null || displacedVertices == null || displacedVertices.Length == 0)
                 return;
             
-            // Get current vertex positions (or use displaced if first chunk)
-            Vector3[] currentVertices = originalMesh.vertices;
-            if (currentVertices == null || currentVertices.Length == 0)
-            {
-                currentVertices = (Vector3[])displacedVertices.Clone();
-            }
+            // Cap the shrink factor to maintain 25% minimum size
+            // When shrinkFactor = 0 (full health): no shrinking (100% size)
+            // When shrinkFactor = 1 (1 health): shrink to 25% size
+            // This means we shrink by maximum 75% of the distance to center
+            float maxShrinkPercentage = 0.75f; // Maximum 75% shrink (25% minimum size)
+            float cappedShrinkFactor = shrinkFactor * maxShrinkPercentage;
             
-            // Pick a random vertex as the center of the chunk
-            int centerVertexIndex = Random.Range(0, currentVertices.Length);
-            Vector3 centerVertex = currentVertices[centerVertexIndex];
-            
-            // Find 7 nearest neighbors to create an 8-vertex cluster
-            int[] neighborIndices = FindNearestNeighbors(currentVertices, centerVertexIndex, 11);
-            
-            // Calculate shrink amount based on shrink factor
-            // Move vertices toward asteroid's center (origin in local space)
+            // CRITICAL: Always calculate from ORIGINAL displaced vertices, not current vertices
+            // This prevents compounding shrinkage when RemoveChunk is called multiple times
+            Vector3[] newVertices = new Vector3[displacedVertices.Length];
             Vector3 asteroidCenter = Vector3.zero;
             
-            // Shrink the center vertex
-            currentVertices[centerVertexIndex] = Vector3.Lerp(
-                currentVertices[centerVertexIndex],
-                asteroidCenter,
-                shrinkFactor
-            );
-            
-            // Shrink the 7 neighboring vertices
-            foreach (int neighborIndex in neighborIndices)
+            // Shrink ALL vertices uniformly from their ORIGINAL positions
+            for (int i = 0; i < displacedVertices.Length; i++)
             {
-                if (neighborIndex >= 0 && neighborIndex < currentVertices.Length)
-                {
-                    currentVertices[neighborIndex] = Vector3.Lerp(
-                        currentVertices[neighborIndex],
-                        asteroidCenter,
-                        shrinkFactor
-                    );
-                }
+                newVertices[i] = Vector3.Lerp(
+                    displacedVertices[i],  // Use ORIGINAL displaced vertex, not current
+                    asteroidCenter,
+                    cappedShrinkFactor
+                );
             }
             
             // Apply updated vertices to mesh
-            originalMesh.vertices = currentVertices;
+            originalMesh.vertices = newVertices;
             originalMesh.RecalculateBounds();
             originalMesh.RecalculateNormals();
             
@@ -276,43 +262,6 @@ namespace AsteroidMiner.Entities
                 meshCollider.sharedMesh = null;
                 meshCollider.sharedMesh = originalMesh;
             }
-        }
-        
-        /// <summary>
-        /// Find the N nearest neighbor vertices to a given vertex.
-        /// Returns array of indices.
-        /// </summary>
-        private int[] FindNearestNeighbors(Vector3[] vertices, int centerIndex, int count)
-        {
-            if (vertices == null || centerIndex < 0 || centerIndex >= vertices.Length)
-                return new int[0];
-            
-            Vector3 center = vertices[centerIndex];
-            
-            // Create array of (index, distance) pairs
-            System.Collections.Generic.List<(int index, float distSq)> distances = 
-                new System.Collections.Generic.List<(int, float)>();
-            
-            for (int i = 0; i < vertices.Length; i++)
-            {
-                if (i == centerIndex) continue; // Skip self
-                
-                float distSq = (vertices[i] - center).sqrMagnitude;
-                distances.Add((i, distSq));
-            }
-            
-            // Sort by distance (squared for performance)
-            distances.Sort((a, b) => a.distSq.CompareTo(b.distSq));
-            
-            // Take the N nearest
-            int resultCount = Mathf.Min(count, distances.Count);
-            int[] result = new int[resultCount];
-            for (int i = 0; i < resultCount; i++)
-            {
-                result[i] = distances[i].index;
-            }
-            
-            return result;
         }
         
         /// <summary>

@@ -24,10 +24,8 @@ namespace AsteroidMiner.Systems
         [SerializeField] private LayerMask asteroidLayerMask = ~0; // What layers to hit
         
         [Header("Laser Settings")]
-        [SerializeField] private GameObject laserPrefab;
+        [SerializeField] private GameObject enhancedLaserPrefab;
         [SerializeField] private Transform[] laserOrigins; // Multiple mount points for multi-mining
-        [SerializeField] private Color laserColor = new Color(0f, 1f, 0f, 0.8f);
-        [SerializeField] private float laserWidth = 0.2f;
         
         [Header("References")]
         [SerializeField] private ShipStats shipStats;
@@ -37,18 +35,18 @@ namespace AsteroidMiner.Systems
         // Mining state
         private bool isMining = false;
         private List<MiningTarget> activeTargets = new List<MiningTarget>();
-        private List<MiningLaser> activeLasers = new List<MiningLaser>();
+        private List<EnhancedMiningLaser> activeLasers = new List<EnhancedMiningLaser>();
         
         // Mining target tracking
         private class MiningTarget
         {
             public Asteroid asteroid;
             public float progress;
-            public MiningLaser laser;
+            public EnhancedMiningLaser laser;
             public int lastHealthInteger; // Track integer health to detect threshold crossings
             public Vector3 hitPoint; // Exact point where raycast hit the asteroid
             
-            public MiningTarget(Asteroid ast, MiningLaser laserBeam, Vector3 hit)
+            public MiningTarget(Asteroid ast, EnhancedMiningLaser laserBeam, Vector3 hit)
             {
                 asteroid = ast;
                 progress = 0f;
@@ -152,6 +150,16 @@ namespace AsteroidMiner.Systems
         {
             if (isMining && shipStats != null && !shipStats.IsDocked())
             {
+                // Check if cargo becomes full during mining - stop immediately
+                if (shipStats.GetCurrentCargoCount() >= shipStats.GetMaxCargo())
+                {
+#if UNITY_EDITOR
+                    Debug.Log("MiningSystem: Cargo full during mining, stopping");
+#endif
+                    StopMining();
+                    return;
+                }
+                
                 // Raycast every frame to update targets based on what player is looking at
                 UpdateTargetsFromRaycast();
                 UpdateMining();
@@ -182,6 +190,15 @@ namespace AsteroidMiner.Systems
         private void StartMining()
         {
             if (shipStats == null || shipStats.IsDocked()) return;
+            
+            // Check if cargo is full - if so, don't allow mining
+            if (shipStats.GetCurrentCargoCount() >= shipStats.GetMaxCargo())
+            {
+#if UNITY_EDITOR
+                Debug.Log("MiningSystem: Cannot start mining - cargo hold is full!");
+#endif
+                return;
+            }
             
             isMining = true;
             // Targets will be acquired in Update() via UpdateTargetsFromRaycast()
@@ -329,10 +346,14 @@ namespace AsteroidMiner.Systems
                 else
                 {
                     // Add new target
-                    MiningLaser laser = CreateLaser(laserOrigins[i % laserOrigins.Length]);
+                    EnhancedMiningLaser laser = CreateLaser(laserOrigins[i % laserOrigins.Length]);
                     MiningTarget target = new MiningTarget(data.asteroid, laser, data.hitPoint);
                     activeTargets.Add(target);
                     data.asteroid.IsBeingMined = true;
+                    
+                    // Start the laser animation
+                    Vector3 laserOrigin = laserOrigins[i % laserOrigins.Length].position;
+                    laser.StartLaser(laserOrigin, data.hitPoint);
                 }
             }
         }
@@ -428,17 +449,7 @@ namespace AsteroidMiner.Systems
                     // Award resources for each threshold crossed
                     for (int t = 0; t < thresholdsCrossed; t++)
                     {
-                        // Check if cargo is full before adding resource
-                        if (shipStats.GetCurrentCargoCount() >= shipStats.GetMaxCargo())
-                        {
-#if UNITY_EDITOR
-                            Debug.Log("MiningSystem: Cargo full during mining, stopping");
-#endif
-                            StopMining();
-                            return;
-                        }
-                        
-                        // Add 1 unit of resource
+                        // Add 1 unit of resource (cargo full check is done in Update)
                         bool added = shipStats.AddToCargo(target.asteroid.Type.resourceName, 1);
                         if (added)
                         {
@@ -510,10 +521,11 @@ namespace AsteroidMiner.Systems
                 target.asteroid.IsBeingMined = false;
             }
             
-            // Destroy laser
+            // Stop laser with animation
             if (target.laser != null)
             {
-                Destroy(target.laser.gameObject);
+                target.laser.StopLaser();
+                Destroy(target.laser.gameObject, 0.3f); // Delay destruction to allow shutdown animation
             }
             
             activeTargets.RemoveAt(index);
@@ -533,7 +545,8 @@ namespace AsteroidMiner.Systems
                 
                 if (target.laser != null)
                 {
-                    Destroy(target.laser.gameObject);
+                    target.laser.StopLaser();
+                    Destroy(target.laser.gameObject, 0.3f); // Delay destruction to allow shutdown animation
                 }
             }
             
@@ -547,17 +560,13 @@ namespace AsteroidMiner.Systems
         /// <summary>
         /// Create a laser beam GameObject with LineRenderer.
         /// </summary>
-        private MiningLaser CreateLaser(Transform origin)
+        private EnhancedMiningLaser CreateLaser(Transform origin)
         {
-            GameObject laserObj = new GameObject("MiningLaser");
+            GameObject laserObj = Instantiate(enhancedLaserPrefab);
             laserObj.transform.SetParent(origin);
             laserObj.transform.localPosition = Vector3.zero;
             
-            MiningLaser laser = laserObj.AddComponent<MiningLaser>();
-            laser.Initialize(laserColor, laserWidth);
-            
-            activeLasers.Add(laser);
-            return laser;
+            return laserObj.GetComponent<EnhancedMiningLaser>();
         }
         
         #endregion

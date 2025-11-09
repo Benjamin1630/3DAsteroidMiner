@@ -1412,15 +1412,13 @@ MonoBehaviour:
   asteroidLayerMask:
     serializedVersion: 2
     m_Bits: 512
-  laserPrefab: {fileID: 0}
+  enhancedLaserPrefab: {fileID: 3589056785311566676, guid: 9e5dd41b628400340be419d24c3cf273, type: 3}
   laserOrigins:
   - {fileID: 1157102903}
   - {fileID: 489796708}
   - {fileID: 735641703}
   - {fileID: 2112056083}
-  laserColor: {r: 0, g: 1, b: 0, a: 0.8}
-  laserWidth: 0.2
-  shipStats: {fileID: 0}
+  shipStats: {fileID: 1690150813}
   playerTransform: {fileID: 1690150818}
   asteroidPool: {fileID: 0}
 --- !u!1 &1795925583
