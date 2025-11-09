@@ -39,10 +39,12 @@ namespace AsteroidMiner.Entities
         public event Action OnScannerPressed;
         public event Action OnDockPressed;
         public event Action OnPausePressed;
+        public event Action<bool> OnSpaceBrakeToggled; // true = activated, false = deactivated
         
         // State
         private bool isEnabled = true;
         private bool mouseFlightEnabled = false;
+        private bool spaceBrakeActive = false;
         
         #region Unity Lifecycle
         
@@ -146,6 +148,11 @@ namespace AsteroidMiner.Entities
             {
                 pauseAction.performed += OnPauseCallback;
             }
+            
+            if (spaceBrakeAction != null)
+            {
+                spaceBrakeAction.performed += OnSpaceBrakeCallback;
+            }
         }
         
         /// <summary>
@@ -196,6 +203,11 @@ namespace AsteroidMiner.Entities
             {
                 pauseAction.performed -= OnPauseCallback;
             }
+            
+            if (spaceBrakeAction != null)
+            {
+                spaceBrakeAction.performed -= OnSpaceBrakeCallback;
+            }
         }
         
         #endregion
@@ -225,6 +237,12 @@ namespace AsteroidMiner.Entities
         private void OnPauseCallback(InputAction.CallbackContext context)
         {
             OnPausePressed?.Invoke();
+        }
+        
+        private void OnSpaceBrakeCallback(InputAction.CallbackContext context)
+        {
+            spaceBrakeActive = !spaceBrakeActive;
+            OnSpaceBrakeToggled?.Invoke(spaceBrakeActive);
         }
         
         #endregion
@@ -336,6 +354,14 @@ namespace AsteroidMiner.Entities
         public float GetThrustVertical()
         {
             return upDownAction != null ? upDownAction.ReadValue<float>() : 0f;
+        }
+        
+        /// <summary>
+        /// Check if space brake is currently active.
+        /// </summary>
+        public bool IsSpaceBrakeActive()
+        {
+            return spaceBrakeActive;
         }
         
         #endregion

@@ -42,6 +42,12 @@ namespace AsteroidMiner.Entities
         [Header("Fuel Settings")]
         [SerializeField] private float baseFuelConsumptionRate = 0.125f;
         
+        [Header("Space Brake Settings")]
+        [Tooltip("Force multiplier for space brake counter-force")]
+        [SerializeField] private float spaceBrakeForce = 30f;
+        [Tooltip("Fuel consumption rate while space brake is active")]
+        [SerializeField] private float spaceBrakeFuelRate = 0.25f;
+        
         private Rigidbody rb;
         private PlayerInputHandler inputHandler;
         private ShipStats shipStats;
@@ -53,11 +59,14 @@ namespace AsteroidMiner.Entities
         private float thrustStrafeInput = 0f;
         private float thrustVerticalInput = 0f;
         
+        private bool spaceBrakeActive = false;
+        
         private Vector3 lastPosition;
         
         public Vector3 Velocity => rb != null ? rb.linearVelocity : Vector3.zero;
         public float CurrentSpeed => rb != null ? rb.linearVelocity.magnitude : 0f;
         public bool IsMoving => CurrentSpeed > 0.1f;
+        public bool IsSpaceBrakeActive => spaceBrakeActive;
         
         private void Awake()
         {
@@ -88,6 +97,7 @@ namespace AsteroidMiner.Entities
                 inputHandler.OnThrustForward += HandleThrustForwardInput;
                 inputHandler.OnThrustStrafe += HandleThrustStrafeInput;
                 inputHandler.OnThrustVertical += HandleThrustVerticalInput;
+                inputHandler.OnSpaceBrakeToggled += HandleSpaceBrakeToggled;
             }
         }
         
@@ -97,6 +107,7 @@ namespace AsteroidMiner.Entities
             
             ApplyRotation();
             ApplyTranslation();
+            ApplySpaceBrake();
             TrackDistance();
         }
         
@@ -110,6 +121,7 @@ namespace AsteroidMiner.Entities
                 inputHandler.OnThrustForward -= HandleThrustForwardInput;
                 inputHandler.OnThrustStrafe -= HandleThrustStrafeInput;
                 inputHandler.OnThrustVertical -= HandleThrustVerticalInput;
+                inputHandler.OnSpaceBrakeToggled -= HandleSpaceBrakeToggled;
             }
         }
         
@@ -119,6 +131,7 @@ namespace AsteroidMiner.Entities
         private void HandleThrustForwardInput(float input) { thrustForwardInput = input; }
         private void HandleThrustStrafeInput(float input) { thrustStrafeInput = input; }
         private void HandleThrustVerticalInput(float input) { thrustVerticalInput = input; }
+        private void HandleSpaceBrakeToggled(bool active) { spaceBrakeActive = active; }
         
         private void ApplyRotation()
         {
@@ -185,6 +198,65 @@ namespace AsteroidMiner.Entities
                 float fuelConsumption = baseFuelConsumptionRate * thrustLocal.magnitude / baseThrust * Time.fixedDeltaTime;
                 shipStats.ConsumeFuel(fuelConsumption);
             }
+        }
+        
+        private void ApplySpaceBrake()
+        {
+            // Only apply space brake if active, has fuel, and ship is moving
+            if (!spaceBrakeActive || !shipStats.HasFuel() || rb.linearVelocity.sqrMagnitude < 0.01f)
+                return;
+            
+            // Get current player input in local space
+            Vector3 inputLocal = new Vector3(thrustStrafeInput, thrustVerticalInput, thrustForwardInput);
+            
+            // Convert velocity to local space to compare with input
+            Vector3 velocityLocal = transform.InverseTransformDirection(rb.linearVelocity);
+            
+            // Create a brake vector that only opposes velocity in directions without input
+            Vector3 brakeVectorLocal = Vector3.zero;
+            
+            // X-axis (strafe): only brake if no strafe input
+            if (Mathf.Abs(thrustStrafeInput) < 0.1f)
+                brakeVectorLocal.x = -velocityLocal.x;
+            
+            // Y-axis (vertical): only brake if no vertical input
+            if (Mathf.Abs(thrustVerticalInput) < 0.1f)
+                brakeVectorLocal.y = -velocityLocal.y;
+            
+            // Z-axis (forward): only brake if no forward input
+            if (Mathf.Abs(thrustForwardInput) < 0.1f)
+                brakeVectorLocal.z = -velocityLocal.z;
+            
+            // If there's no braking to apply, return early
+            if (brakeVectorLocal.sqrMagnitude < 0.01f)
+                return;
+            
+            // Calculate the desired brake force
+            // Limit to 19/20th (95%) of current velocity to prevent over-correction
+            float brakeVectorMagnitude = brakeVectorLocal.magnitude;
+            float maxBrakeForce = brakeVectorMagnitude * (19f / 20f) / Time.fixedDeltaTime;
+            
+            // Scale brake force, capped at the velocity-based limit
+            float desiredBrakeForce = spaceBrakeForce * (brakeVectorMagnitude / velocityLocal.magnitude);
+            float actualBrakeForce = Mathf.Min(desiredBrakeForce, maxBrakeForce);
+            
+            Vector3 brakeForceLocal = brakeVectorLocal.normalized * actualBrakeForce;
+            
+            // Convert back to world space and apply
+            Vector3 brakeForceWorld = transform.TransformDirection(brakeForceLocal);
+            rb.AddForce(brakeForceWorld, ForceMode.Acceleration);
+            
+            // Fuel consumption proportional to the actual brake force being applied
+            float velocityMagnitude = rb.linearVelocity.magnitude;
+            float actualBrakeMagnitude = brakeForceLocal.magnitude;
+            float fuelEfficiency = shipStats.GetFuelEfficiencyMultiplier();
+            
+            // Calculate fuel consumption based on actual braking force
+            float normalizedVelocity = Mathf.Clamp01(velocityMagnitude / 50f);
+            float normalizedForce = Mathf.Clamp01(actualBrakeMagnitude / spaceBrakeForce);
+            float fuelConsumption = spaceBrakeFuelRate * normalizedForce * normalizedVelocity * fuelEfficiency * Time.fixedDeltaTime;
+            
+            shipStats.ConsumeFuel(fuelConsumption);
         }
         
         private void TrackDistance()

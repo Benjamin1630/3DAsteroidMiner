@@ -1263,10 +1263,12 @@ MonoBehaviour:
   mouseLookSensitivity: 2
   gamepadLookSensitivity: 0.1
   rotationSensitivity: 0.15
-  linearDrag: 0.25
+  linearDrag: 0.125
   angularDrag: 1.5
   movementSensitivity: 0.125
   baseFuelConsumptionRate: 0.125
+  spaceBrakeForce: 30
+  spaceBrakeFuelRate: 0.25
 --- !u!54 &1690150816
 Rigidbody:
   m_ObjectHideFlags: 0
