@@ -14,10 +14,8 @@ namespace AsteroidMiner.Systems
     public class ScannerSystem : MonoBehaviour
     {
         [Header("Scanner Settings")]
-        [SerializeField] private float baseScanRange = 100f; // Base range before upgrades
-        [SerializeField] private float rangePerUpgrade = 100f; // +100 per upgrade level
-        [SerializeField] private float baseCooldown = 10f; // Base cooldown in seconds
-        [SerializeField] private float cooldownReductionPerLevel = 0.08f; // -8% per level
+        [SerializeField] private float baseScanRange = 100f; // Fallback if ShipStats not found
+        [SerializeField] private float baseCooldown = 10f; // Fallback if ShipStats not found
         [SerializeField] private float pulseDuration = 2f; // How long the pulse lasts
         [SerializeField] private float highlightDuration = 5f; // How long asteroids stay highlighted
         
@@ -34,7 +32,7 @@ namespace AsteroidMiner.Systems
         [SerializeField] private InputActionAsset inputActions;
         
         [Header("References")]
-        [SerializeField] private GameState gameState;
+        private ShipStats shipStats;
         [SerializeField] private Transform shipTransform;
         
         // Runtime state
@@ -64,6 +62,16 @@ namespace AsteroidMiner.Systems
             if (shipTransform == null)
             {
                 shipTransform = transform;
+            }
+            
+            // Get ShipStats component from ship
+            if (shipTransform != null)
+            {
+                shipStats = shipTransform.GetComponent<ShipStats>();
+                if (shipStats == null)
+                {
+                    Debug.LogError("ScannerSystem: No ShipStats component found on ship! Please add ShipStats component.");
+                }
             }
             
             // Setup Input System action
@@ -132,14 +140,14 @@ namespace AsteroidMiner.Systems
                 return;
             }
             
-            if (gameState == null)
+            if (shipStats == null)
             {
-                Debug.LogWarning("ScannerSystem: No GameState reference!");
+                Debug.LogWarning("ScannerSystem: No ShipStats reference!");
                 return;
             }
             
             // Don't allow scanning while docked
-            if (gameState.isDocked)
+            if (shipStats.IsDocked())
             {
 #if UNITY_EDITOR
                 Debug.Log("Scanner cannot be used while docked");
@@ -344,29 +352,22 @@ namespace AsteroidMiner.Systems
         
         /// <summary>
         /// Get current scan range based on upgrade level.
-        /// Formula: baseScanRange + (scanRangeLevel * rangePerUpgrade)
-        /// Base: 100m, +100m per level (Level 10 = 1100m)
+        /// Uses ShipStats pre-calculated value.
         /// </summary>
         private float GetScanRange()
         {
-            if (gameState == null) return baseScanRange;
-            
-            int upgradeLevel = gameState.upgrades.ContainsKey("scanRange") ? gameState.upgrades["scanRange"] : 1;
-            return baseScanRange + ((upgradeLevel - 1) * rangePerUpgrade);
+            if (shipStats == null) return baseScanRange;
+            return shipStats.GetScannerRange();
         }
         
         /// <summary>
         /// Get current scan cooldown based on upgrade level.
-        /// Formula: baseCooldown * (1 - scanCooldownLevel * cooldownReductionPerLevel)
-        /// Base: 10s, -8% per level (Level 10 = 2.6s)
+        /// Uses ShipStats pre-calculated value.
         /// </summary>
         private float GetScanCooldown()
         {
-            if (gameState == null) return baseCooldown;
-            
-            int upgradeLevel = gameState.upgrades.ContainsKey("scanCooldown") ? gameState.upgrades["scanCooldown"] : 1;
-            float reduction = (upgradeLevel - 1) * cooldownReductionPerLevel;
-            return baseCooldown * (1f - reduction);
+            if (shipStats == null) return baseCooldown;
+            return shipStats.GetScannerCooldown();
         }
         
         /// <summary>

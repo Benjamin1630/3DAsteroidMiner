@@ -30,7 +30,9 @@ namespace AsteroidMiner.Entities
         
         [Header("References")]
         [SerializeField] private PlayerController playerController;
-        [SerializeField] private GameState gameState;
+        
+        // Runtime reference to ShipStats
+        private ShipStats shipStats;
         
         // State
         private Vector2 lastMoveInput = Vector2.zero;
@@ -46,6 +48,16 @@ namespace AsteroidMiner.Entities
             // Get component references if not assigned
             if (playerController == null)
                 playerController = GetComponent<PlayerController>();
+            
+            // Get ShipStats reference from PlayerController
+            if (playerController != null)
+            {
+                shipStats = playerController.GetShipStats();
+                if (shipStats == null)
+                {
+                    Debug.LogError("ShipVisuals: No ShipStats component found! Please add ShipStats to player ship.");
+                }
+            }
             
             // Initialize particle systems
             if (leftEngineParticles != null)
@@ -93,7 +105,7 @@ namespace AsteroidMiner.Entities
             bool intensityChanged = Mathf.Abs(engineIntensity - lastEngineIntensity) > 0.05f;
             
             // Update particles
-            if (isMoving && gameState != null && gameState.HasFuel())
+            if (isMoving && shipStats != null && shipStats.HasFuel())
             {
                 if (leftEngineParticles != null && !leftEngineParticles.isPlaying)
                     leftEngineParticles.Play();
@@ -208,14 +220,6 @@ namespace AsteroidMiner.Entities
         #endregion
         
         #region Public Methods
-        
-        /// <summary>
-        /// Set the game state reference.
-        /// </summary>
-        public void SetGameState(GameState state)
-        {
-            gameState = state;
-        }
         
         /// <summary>
         /// Play damage effect when ship takes damage.

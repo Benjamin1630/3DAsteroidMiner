@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using AsteroidMiner.Core;
 
 namespace AsteroidMiner.Entities
 {
@@ -8,9 +7,11 @@ namespace AsteroidMiner.Entities
     /// Handles player ship movement using 6 Degrees of Freedom (6DoF) controls.
     /// Implements space flight physics similar to Elite Dangerous, Star Citizen, and No Man's Sky.
     /// Uses Unity's new Input System for all input handling.
+    /// Accesses ship data through ShipStats component.
     /// </summary>
     [RequireComponent(typeof(Rigidbody))]
     [RequireComponent(typeof(Collider))] // Ensure player has collision detection
+    [RequireComponent(typeof(ShipStats))] // Require ShipStats component
     public class PlayerController : MonoBehaviour
     {
         [Header("Translation Settings")]
@@ -41,11 +42,9 @@ namespace AsteroidMiner.Entities
         [Header("Fuel Settings")]
         [SerializeField] private float baseFuelConsumptionRate = 0.125f;
         
-        [Header("References")]
-        [SerializeField] private GameState gameState;
-        
         private Rigidbody rb;
         private PlayerInputHandler inputHandler;
+        private ShipStats shipStats;
         
         private float pitchInput = 0f;
         private float yawInput = 0f;
@@ -64,6 +63,12 @@ namespace AsteroidMiner.Entities
         {
             rb = GetComponent<Rigidbody>();
             inputHandler = GetComponent<PlayerInputHandler>();
+            shipStats = GetComponent<ShipStats>();
+            
+            if (shipStats == null)
+            {
+                Debug.LogError("PlayerController: ShipStats component not found! Please add ShipStats to the player ship.");
+            }
             
             rb.useGravity = false;
             rb.linearDamping = linearDrag;
@@ -75,12 +80,6 @@ namespace AsteroidMiner.Entities
         
         private void Start()
         {
-            if (gameState == null)
-            {
-                gameState = GameState.CreateNew();
-                Debug.LogWarning("PlayerController: No GameState assigned, using temporary state for testing.");
-            }
-            
             if (inputHandler != null)
             {
                 inputHandler.OnPitch += HandlePitchInput;
@@ -94,7 +93,7 @@ namespace AsteroidMiner.Entities
         
         private void FixedUpdate()
         {
-            if (gameState == null || gameState.isDocked) return;
+            if (shipStats == null || shipStats.IsDocked()) return;
             
             ApplyRotation();
             ApplyTranslation();
@@ -123,7 +122,7 @@ namespace AsteroidMiner.Entities
         
         private void ApplyRotation()
         {
-            if (!gameState.HasFuel()) return;
+            if (!shipStats.HasFuel()) return;
             
             float pitch = pitchSpeed * rotationSensitivity;
             float yaw = yawSpeed * rotationSensitivity;
@@ -152,16 +151,19 @@ namespace AsteroidMiner.Entities
                 
                 // Fuel consumption uses deltaTime
                 float rotationFuel = baseFuelConsumptionRate * 0.2f * torque.magnitude / 100f * Time.fixedDeltaTime;
-                gameState.ConsumeFuel(rotationFuel);
+                shipStats.ConsumeFuel(rotationFuel);
             }
         }
         
         private void ApplyTranslation()
         {
-            if (!gameState.HasFuel()) return;
+            if (!shipStats.HasFuel()) return;
             
-            float acceleration = gameState.GetAcceleration();
-            float maxSpeed = gameState.GetMaxSpeed();
+            // Get acceleration and max speed from ship stats (includes upgrade bonuses)
+            float baseAcceleration = 10f;
+            float baseMaxSpeed = 20f;
+            float acceleration = baseAcceleration * shipStats.GetAccelerationMultiplier();
+            float maxSpeed = baseMaxSpeed * shipStats.GetMaxSpeedMultiplier();
             
             Vector3 thrustLocal = new Vector3(
                 thrustStrafeInput * strafeThrust * acceleration * movementSensitivity,
@@ -181,18 +183,24 @@ namespace AsteroidMiner.Entities
                 
                 // Fuel consumption uses deltaTime
                 float fuelConsumption = baseFuelConsumptionRate * thrustLocal.magnitude / baseThrust * Time.fixedDeltaTime;
-                gameState.ConsumeFuel(fuelConsumption);
+                shipStats.ConsumeFuel(fuelConsumption);
             }
         }
         
         private void TrackDistance()
         {
             float distance = Vector3.Distance(transform.position, lastPosition);
-            gameState.distanceTraveled += distance;
+            shipStats.AddDistanceTraveled(distance);
             lastPosition = transform.position;
         }
         
-        public void SetGameState(GameState state) { gameState = state; }
+        /// <summary>
+        /// Get the ShipStats component (for other systems to access ship data).
+        /// </summary>
+        public ShipStats GetShipStats()
+        {
+            return shipStats;
+        }
         
         public void StopMovement()
         {

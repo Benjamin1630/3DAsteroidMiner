@@ -531,6 +531,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &489796707
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 489796708}
+  m_Layer: 0
+  m_Name: Laser2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &489796708
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 489796707}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.5, y: -0.5, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 581608770}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &563519079
 GameObject:
   m_ObjectHideFlags: 0
@@ -658,6 +689,41 @@ Transform:
   m_Children: []
   m_Father: {fileID: 250309946}
   m_LocalEulerAnglesHint: {x: -14.307, y: -185.115, z: 92.192}
+--- !u!1 &581608769
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 581608770}
+  m_Layer: 0
+  m_Name: LaserPositions
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &581608770
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 581608769}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0.75}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1157102903}
+  - {fileID: 489796708}
+  - {fileID: 735641703}
+  - {fileID: 2112056083}
+  m_Father: {fileID: 1690150818}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &609124906
 GameObject:
   m_ObjectHideFlags: 0
@@ -858,6 +924,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &735641702
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 735641703}
+  m_Layer: 0
+  m_Name: Laser3
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &735641703
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 735641702}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.5, y: 0.5, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 581608770}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1013381755
 GameObject:
   m_ObjectHideFlags: 0
@@ -1026,7 +1123,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1378027784
+--- !u!1 &1157102902
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1034,86 +1131,28 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1378027787}
-  - component: {fileID: 1378027786}
-  - component: {fileID: 1378027785}
+  - component: {fileID: 1157102903}
   m_Layer: 0
-  m_Name: FogVolume
+  m_Name: Laser1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!23 &1378027785
-MeshRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1378027784}
-  m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 2
-  m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
-  m_ForceMeshLod: -1
-  m_MeshLodSelectionBias: 0
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 2100000, guid: ed588b028490c4c43982fb87e20915b0, type: 2}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 3
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_AdditionalVertexStreams: {fileID: 0}
---- !u!33 &1378027786
-MeshFilter:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1378027784}
-  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
---- !u!4 &1378027787
+--- !u!4 &1157102903
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1378027784}
+  m_GameObject: {fileID: 1157102902}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 100000, y: 100000, z: 100000}
+  m_LocalPosition: {x: 0.5, y: -0.5, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 581608770}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1690150812
 GameObject:
@@ -1125,10 +1164,11 @@ GameObject:
   m_Component:
   - component: {fileID: 1690150818}
   - component: {fileID: 1690150817}
+  - component: {fileID: 1690150813}
   - component: {fileID: 1690150816}
   - component: {fileID: 1690150815}
   - component: {fileID: 1690150814}
-  - component: {fileID: 1690150813}
+  - component: {fileID: 1690150821}
   - component: {fileID: 1690150819}
   - component: {fileID: 1690150820}
   m_Layer: 0
@@ -1147,30 +1187,38 @@ MonoBehaviour:
   m_GameObject: {fileID: 1690150812}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ab8934163a5645d4fad446fd59c48924, type: 3}
+  m_Script: {fileID: 11500000, guid: 4204270ccb4604141a26c96f188bb018, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AsteroidMiner.Entities.PlayerStats
-  gameState:
-    credits: 0
-    hull: 100
-    maxHull: 100
-    fuel: 100
-    maxFuel: 100
-    currentCargoCount: 0
-    maxCargo: 20
-    sector: 1
-    prestige: 0
-    distanceTraveled: 0
-    asteroidsMined: 0
-    totalCreditsEarned: 0
-    hazardsDestroyed: 0
-    sectorsExplored: 0
-    missionsCompleted: 0
-    totalPlayTime: 0
-    shipName: Prospector
-    isDocked: 0
-    shipPosition: {x: 0, y: 0, z: 0}
-    shipVelocity: {x: 0, y: 0, z: 0}
+  credits: 0
+  hull: 100
+  maxHull: 100
+  fuel: 100
+  maxFuel: 100
+  maxCargo: 40
+  speedLevel: 1
+  cargoLevel: 1
+  miningLevel: 1
+  hullLevel: 1
+  fuelCapacityLevel: 1
+  fuelEfficiencyLevel: 1
+  rangeLevel: 1
+  multiMiningLevel: 1
+  scanRangeLevel: 1
+  scanCooldownLevel: 1
+  hasAdvancedScanner: 0
+  hasCargoDrone: 0
+  currentSector: 1
+  prestigeLevel: 0
+  distanceTraveled: 0
+  asteroidsMined: 0
+  totalCreditsEarned: 0
+  hazardsDestroyed: 0
+  sectorsExplored: 0
+  missionsCompleted: 0
+  totalPlayTime: 0
+  shipName: Prospector
+  isDocked: 0
 --- !u!114 &1690150814
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1194,27 +1242,6 @@ MonoBehaviour:
   speedLinesParticles: {fileID: 1958554224}
   speedLinesThreshold: 0
   playerController: {fileID: 1690150815}
-  gameState:
-    credits: 0
-    hull: 100
-    maxHull: 100
-    fuel: 100
-    maxFuel: 100
-    currentCargoCount: 0
-    maxCargo: 20
-    sector: 1
-    prestige: 0
-    distanceTraveled: 0
-    asteroidsMined: 0
-    totalCreditsEarned: 0
-    hazardsDestroyed: 0
-    sectorsExplored: 0
-    missionsCompleted: 0
-    totalPlayTime: 0
-    shipName: Prospector
-    isDocked: 0
-    shipPosition: {x: 0, y: 0, z: 0}
-    shipVelocity: {x: 0, y: 0, z: 0}
 --- !u!114 &1690150815
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1240,27 +1267,6 @@ MonoBehaviour:
   angularDrag: 1.5
   movementSensitivity: 0.125
   baseFuelConsumptionRate: 0.125
-  gameState:
-    credits: 0
-    hull: 100
-    maxHull: 100
-    fuel: 100
-    maxFuel: 100
-    currentCargoCount: 0
-    maxCargo: 20
-    sector: 1
-    prestige: 0
-    distanceTraveled: 0
-    asteroidsMined: 0
-    totalCreditsEarned: 0
-    hazardsDestroyed: 0
-    sectorsExplored: 0
-    missionsCompleted: 0
-    totalPlayTime: 0
-    shipName: Prospector
-    isDocked: 0
-    shipPosition: {x: 0, y: 0, z: 0}
-    shipVelocity: {x: 0, y: 0, z: 0}
 --- !u!54 &1690150816
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -1317,6 +1323,7 @@ Transform:
   - {fileID: 609124907}
   - {fileID: 330585546}
   - {fileID: 1958554221}
+  - {fileID: 581608770}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!65 &1690150819
@@ -1353,9 +1360,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AsteroidMiner.Systems.ScannerSystem
   baseScanRange: 1000
-  rangePerUpgrade: 100
   baseCooldown: 2
-  cooldownReductionPerLevel: 0.08
   pulseDuration: 1
   highlightDuration: 5
   scanPulseMaterial: {fileID: 2100000, guid: 1ec0b9b5ab90fde4e938897bc18b8431, type: 2}
@@ -1387,28 +1392,37 @@ MonoBehaviour:
   scanActivateSound: {fileID: 0}
   scanPulseSound: {fileID: 0}
   inputActions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-  gameState:
-    credits: 0
-    hull: 100
-    maxHull: 100
-    fuel: 100
-    maxFuel: 100
-    currentCargoCount: 0
-    maxCargo: 20
-    sector: 1
-    prestige: 0
-    distanceTraveled: 0
-    asteroidsMined: 0
-    totalCreditsEarned: 0
-    hazardsDestroyed: 0
-    sectorsExplored: 0
-    missionsCompleted: 0
-    totalPlayTime: 0
-    shipName: Prospector
-    isDocked: 0
-    shipPosition: {x: 0, y: 0, z: 0}
-    shipVelocity: {x: 0, y: 0, z: 0}
   shipTransform: {fileID: 1690150818}
+--- !u!114 &1690150821
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1690150812}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bc7433b99404cf0468552774566d79d0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AsteroidMiner.Systems.MiningSystem
+  miningRange: 50
+  miningFuelConsumption: 0.5
+  playerCamera: {fileID: 330585545}
+  useScreenCenter: 1
+  asteroidLayerMask:
+    serializedVersion: 2
+    m_Bits: 512
+  laserPrefab: {fileID: 0}
+  laserOrigins:
+  - {fileID: 1157102903}
+  - {fileID: 489796708}
+  - {fileID: 735641703}
+  - {fileID: 2112056083}
+  laserColor: {r: 0, g: 1, b: 0, a: 0.8}
+  laserWidth: 0.2
+  shipStats: {fileID: 0}
+  playerTransform: {fileID: 1690150818}
+  asteroidPool: {fileID: 0}
 --- !u!1 &1795925583
 GameObject:
   m_ObjectHideFlags: 0
@@ -1420,7 +1434,6 @@ GameObject:
   - component: {fileID: 1795925586}
   - component: {fileID: 1795925585}
   - component: {fileID: 1795925584}
-  - component: {fileID: 1795925587}
   m_Layer: 0
   m_Name: Post-ProcessingVolume
   m_TagString: Untagged
@@ -1481,29 +1494,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1795925587
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1795925583}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0cf1eeefb610bdd48834995e9fc8eb42, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::VolumetricFogController
-  fogColor: {r: 0.1, g: 0.15, b: 0.25, a: 1}
-  fogMode: 3
-  fogDensity: 0.05
-  fogStart: 10
-  fogEnd: 300
-  enableNebula: 1
-  nebulaColor: {r: 0.3, g: 0.1, b: 0.5, a: 0.3}
-  nebulaIntensity: 0.5
-  animateFog: 1
-  animationSpeed: 0.1
-  densityVariation: 0.01
 --- !u!1 &1958554220
 GameObject:
   m_ObjectHideFlags: 0
@@ -6394,27 +6384,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AsteroidMiner.Systems.AsteroidSpawner
   asteroidPool: {fileID: 2004713138}
   playerTransform: {fileID: 1690150818}
-  gameState:
-    credits: 0
-    hull: 100
-    maxHull: 100
-    fuel: 100
-    maxFuel: 100
-    currentCargoCount: 0
-    maxCargo: 20
-    sector: 1
-    prestige: 0
-    distanceTraveled: 0
-    asteroidsMined: 0
-    totalCreditsEarned: 0
-    hazardsDestroyed: 0
-    sectorsExplored: 0
-    missionsCompleted: 0
-    totalPlayTime: 0
-    shipName: Prospector
-    isDocked: 0
-    shipPosition: {x: 0, y: 0, z: 0}
-    shipVelocity: {x: 0, y: 0, z: 0}
   asteroidTypes:
   - {fileID: 11400000, guid: b200e2d7b5a16724d8cb538ad5d9a1bc, type: 2}
   - {fileID: 11400000, guid: 1cc472403fe69ae44b154b610260da6c, type: 2}
@@ -6467,6 +6436,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2112056082
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2112056083}
+  m_Layer: 0
+  m_Name: Laser4
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2112056083
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2112056082}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.5, y: 0.5, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 581608770}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -6480,4 +6480,3 @@ SceneRoots:
   - {fileID: 250309946}
   - {fileID: 2004713139}
   - {fileID: 1795925586}
-  - {fileID: 1378027787}

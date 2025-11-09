@@ -1,5 +1,7 @@
+using System;
 using UnityEngine;
 using AsteroidMiner.Data;
+using Random = UnityEngine.Random;
 
 namespace AsteroidMiner.Entities
 {
@@ -11,6 +13,9 @@ namespace AsteroidMiner.Entities
     [RequireComponent(typeof(Rigidbody))]
     public class Asteroid : MonoBehaviour
     {
+        // ===== Events =====
+        public event Action<Asteroid> OnAsteroidDestroyed;
+        
         // ===== Configuration =====
         [Header("Asteroid Data")]
         [SerializeField] private AsteroidType asteroidType;
@@ -197,24 +202,60 @@ namespace AsteroidMiner.Entities
         /// <summary>
         /// Apply mining damage to the asteroid.
         /// Returns true if asteroid is destroyed.
+        /// NOTE: Continuous shrinking removed - mesh only updates at integer thresholds via OnIntegerHealthThreshold().
         /// </summary>
         public bool TakeDamage(float damage)
         {
             CurrentHealth -= damage;
             
-            // Update shrink effect based on damage
-            if (proceduralMesh != null && asteroidType != null)
-            {
-                float miningProgress = GetMiningProgress();
-                proceduralMesh.UpdateShrinkEffect(miningProgress);
-            }
+            // NOTE: Mesh regeneration now handled by OnIntegerHealthThreshold()
+            // No continuous shrinking here
             
             if (CurrentHealth <= 0f)
             {
+                OnAsteroidDestroyed?.Invoke(this);
                 return true; // Signal for destruction
             }
             
             return false;
+        }
+        
+        /// <summary>
+        /// Apply mining damage specifically from mining lasers.
+        /// This is a wrapper for TakeDamage() for clarity.
+        /// </summary>
+        public bool TakeMiningDamage(float damage)
+        {
+            CurrentHealth -= damage;
+            
+            if (CurrentHealth <= 0f)
+            {
+                OnAsteroidDestroyed?.Invoke(this);
+                return true; // Signal for destruction
+            }
+            
+            return false;
+        }
+        
+        /// <summary>
+        /// Called when asteroid health crosses an integer threshold (10→9, 9→8, etc).
+        /// Triggers procedural mesh deformation to remove a "chunk".
+        /// </summary>
+        public void OnIntegerHealthThreshold(int newHealthInteger)
+        {
+            if (proceduralMesh != null && asteroidType != null)
+            {
+                // Calculate shrink factor based on remaining health
+                float healthPercent = newHealthInteger / asteroidType.health;
+                float shrinkFactor = 1.0f - healthPercent;
+                
+                // Trigger chunk-based mesh deformation
+                proceduralMesh.RemoveChunk(shrinkFactor);
+                
+#if UNITY_EDITOR
+                Debug.Log($"Asteroid: Health threshold {newHealthInteger} - removing chunk (shrink factor: {shrinkFactor:F2})");
+#endif
+            }
         }
         
         /// <summary>
@@ -359,3 +400,4 @@ namespace AsteroidMiner.Entities
 #endif
     }
 }
+

@@ -169,6 +169,7 @@ namespace AsteroidMiner.Entities
         /// <summary>
         /// Update the mesh shrink effect based on mining progress (0-1).
         /// 0 = full size, 1 = fully mined (smallest size)
+        /// NOTE: This is the OLD continuous shrinking method - no longer used with new chunk-based system.
         /// </summary>
         public void UpdateShrinkEffect(float miningProgress)
         {
@@ -213,6 +214,105 @@ namespace AsteroidMiner.Entities
                     meshCollider.sharedMesh = originalMesh;
                 }
             }
+        }
+        
+        /// <summary>
+        /// Remove a "chunk" from the asteroid by shrinking 8 neighboring vertices toward center.
+        /// Called at each integer health threshold (10→9, 9→8, etc).
+        /// Creates localized damage effect rather than uniform shrinking.
+        /// </summary>
+        /// <param name="shrinkFactor">0-1, how much to shrink (0=no shrink, 1=maximum shrink)</param>
+        public void RemoveChunk(float shrinkFactor)
+        {
+            if (originalMesh == null || displacedVertices == null || displacedVertices.Length == 0)
+                return;
+            
+            // Get current vertex positions (or use displaced if first chunk)
+            Vector3[] currentVertices = originalMesh.vertices;
+            if (currentVertices == null || currentVertices.Length == 0)
+            {
+                currentVertices = (Vector3[])displacedVertices.Clone();
+            }
+            
+            // Pick a random vertex as the center of the chunk
+            int centerVertexIndex = Random.Range(0, currentVertices.Length);
+            Vector3 centerVertex = currentVertices[centerVertexIndex];
+            
+            // Find 7 nearest neighbors to create an 8-vertex cluster
+            int[] neighborIndices = FindNearestNeighbors(currentVertices, centerVertexIndex, 11);
+            
+            // Calculate shrink amount based on shrink factor
+            // Move vertices toward asteroid's center (origin in local space)
+            Vector3 asteroidCenter = Vector3.zero;
+            
+            // Shrink the center vertex
+            currentVertices[centerVertexIndex] = Vector3.Lerp(
+                currentVertices[centerVertexIndex],
+                asteroidCenter,
+                shrinkFactor
+            );
+            
+            // Shrink the 7 neighboring vertices
+            foreach (int neighborIndex in neighborIndices)
+            {
+                if (neighborIndex >= 0 && neighborIndex < currentVertices.Length)
+                {
+                    currentVertices[neighborIndex] = Vector3.Lerp(
+                        currentVertices[neighborIndex],
+                        asteroidCenter,
+                        shrinkFactor
+                    );
+                }
+            }
+            
+            // Apply updated vertices to mesh
+            originalMesh.vertices = currentVertices;
+            originalMesh.RecalculateBounds();
+            originalMesh.RecalculateNormals();
+            
+            // Update collision mesh
+            if (updateCollisionMesh && meshCollider != null)
+            {
+                meshCollider.sharedMesh = null;
+                meshCollider.sharedMesh = originalMesh;
+            }
+        }
+        
+        /// <summary>
+        /// Find the N nearest neighbor vertices to a given vertex.
+        /// Returns array of indices.
+        /// </summary>
+        private int[] FindNearestNeighbors(Vector3[] vertices, int centerIndex, int count)
+        {
+            if (vertices == null || centerIndex < 0 || centerIndex >= vertices.Length)
+                return new int[0];
+            
+            Vector3 center = vertices[centerIndex];
+            
+            // Create array of (index, distance) pairs
+            System.Collections.Generic.List<(int index, float distSq)> distances = 
+                new System.Collections.Generic.List<(int, float)>();
+            
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                if (i == centerIndex) continue; // Skip self
+                
+                float distSq = (vertices[i] - center).sqrMagnitude;
+                distances.Add((i, distSq));
+            }
+            
+            // Sort by distance (squared for performance)
+            distances.Sort((a, b) => a.distSq.CompareTo(b.distSq));
+            
+            // Take the N nearest
+            int resultCount = Mathf.Min(count, distances.Count);
+            int[] result = new int[resultCount];
+            for (int i = 0; i < resultCount; i++)
+            {
+                result[i] = distances[i].index;
+            }
+            
+            return result;
         }
         
         /// <summary>

@@ -17,7 +17,6 @@ namespace AsteroidMiner.Systems
         [Header("References")]
         [SerializeField] private AsteroidPool asteroidPool;
         [SerializeField] private Transform playerTransform;
-        [SerializeField] private GameState gameState;
         
         [Header("Asteroid Types (16 Total)")]
         [Tooltip("Assign all 16 asteroid types in order of rarity")]
@@ -102,12 +101,6 @@ namespace AsteroidMiner.Systems
         
         private void Update()
         {
-            // Update sector parameters if changed
-            if (gameState != null && gameState.sector != currentSector)
-            {
-                UpdateSectorParameters();
-            }
-            
             // Spawn asteroids at intervals
             spawnTimer += Time.deltaTime;
             if (spawnTimer >= spawnCheckInterval)
@@ -128,12 +121,58 @@ namespace AsteroidMiner.Systems
         // ===== Spawning Logic =====
         
         /// <summary>
+        /// Public method to trigger sector warp. Called when player warps to a new sector.
+        /// Clears all existing asteroids and spawns a fresh field for the new sector.
+        /// </summary>
+        /// <param name="newSector">The new sector number (used for debug logging)</param>
+        public void WarpToNextSector(int newSector)
+        {
+            currentSector = newSector;
+            
+#if UNITY_EDITOR
+            if (showDebugInfo)
+            {
+                Debug.Log($"Warping to Sector {currentSector}! Clearing {spawnedAsteroids.Count} asteroids and spawning fresh field.");
+            }
+#endif
+            
+            // Clear all existing asteroids
+            ClearAllAsteroids();
+            
+            // Spawn new asteroid field
+            ForceSpawnAsteroids(minAsteroidCount);
+        }
+        
+        /// <summary>
+        /// Clear all spawned asteroids and return them to the pool.
+        /// </summary>
+        public void ClearAllAsteroids()
+        {
+            foreach (GameObject asteroid in spawnedAsteroids)
+            {
+                if (asteroid != null && asteroid.activeInHierarchy)
+                {
+                    asteroidPool.ReturnAsteroid(asteroid);
+                }
+            }
+            
+            spawnedAsteroids.Clear();
+            
+#if UNITY_EDITOR
+            if (showDebugInfo)
+            {
+                Debug.Log($"Cleared all asteroids. Spawned list now empty.");
+            }
+#endif
+        }
+        
+        /// <summary>
         /// Update spawn parameters based on current sector.
         /// Kept for compatibility but no longer affects asteroid counts.
         /// </summary>
         private void UpdateSectorParameters()
         {
-            currentSector = gameState != null ? gameState.sector : 1;
+            // No longer uses gameState - sector is set via WarpToNextSector()
             
 #if UNITY_EDITOR
             if (showDebugInfo)
@@ -493,20 +532,6 @@ namespace AsteroidMiner.Systems
         }
         
         // ===== Public Methods =====
-        
-        /// <summary>
-        /// Clear all spawned asteroids (useful for sector transitions).
-        /// </summary>
-        public void ClearAllAsteroids()
-        {
-            foreach (GameObject asteroid in spawnedAsteroids)
-            {
-                if (asteroid != null)
-                    asteroidPool.ReturnAsteroid(asteroid);
-            }
-            
-            spawnedAsteroids.Clear();
-        }
         
         /// <summary>
         /// Force spawn a specific number of asteroids immediately.
