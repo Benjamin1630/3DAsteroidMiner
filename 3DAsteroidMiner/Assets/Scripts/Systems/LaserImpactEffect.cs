@@ -16,12 +16,6 @@ namespace AsteroidMiner.Systems
         [SerializeField] private Color hotColor = new Color(1f, 0.6f, 0.1f, 1f); // Molten orange
         [SerializeField] private Color coolColor = new Color(0.2f, 0.1f, 0.05f, 0.5f); // Dark scorch
         
-        [Header("Animation")]
-        [SerializeField] private float growDuration = 0.3f;
-        [SerializeField] private float fadeDuration = 1.5f;
-        [SerializeField] private AnimationCurve growCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
-        [SerializeField] private AnimationCurve fadeCurve = AnimationCurve.EaseInOut(0, 1, 1, 0);
-        
         [Header("Heat Glow")]
         [SerializeField] private bool useGlow = true;
         [SerializeField] private float glowIntensity = 2f;
@@ -31,7 +25,6 @@ namespace AsteroidMiner.Systems
         private Renderer impactRenderer;
         private Light impactLight;
         private float lifetime;
-        private float elapsedTime = 0f;
         private bool isInitialized = false;
         
         #region Initialization

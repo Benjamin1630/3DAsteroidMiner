@@ -59,14 +59,12 @@ namespace AsteroidMiner.Entities
         private float thrustStrafeInput = 0f;
         private float thrustVerticalInput = 0f;
         
-        private bool spaceBrakeActive = false;
-        
         private Vector3 lastPosition;
         
         public Vector3 Velocity => rb != null ? rb.linearVelocity : Vector3.zero;
         public float CurrentSpeed => rb != null ? rb.linearVelocity.magnitude : 0f;
         public bool IsMoving => CurrentSpeed > 0.1f;
-        public bool IsSpaceBrakeActive => spaceBrakeActive;
+        public bool IsSpaceBrakeActive => inputHandler != null && inputHandler.IsSpaceBrakePressed();
         
         private void Awake()
         {
@@ -97,7 +95,6 @@ namespace AsteroidMiner.Entities
                 inputHandler.OnThrustForward += HandleThrustForwardInput;
                 inputHandler.OnThrustStrafe += HandleThrustStrafeInput;
                 inputHandler.OnThrustVertical += HandleThrustVerticalInput;
-                inputHandler.OnSpaceBrakeToggled += HandleSpaceBrakeToggled;
             }
         }
         
@@ -121,7 +118,6 @@ namespace AsteroidMiner.Entities
                 inputHandler.OnThrustForward -= HandleThrustForwardInput;
                 inputHandler.OnThrustStrafe -= HandleThrustStrafeInput;
                 inputHandler.OnThrustVertical -= HandleThrustVerticalInput;
-                inputHandler.OnSpaceBrakeToggled -= HandleSpaceBrakeToggled;
             }
         }
         
@@ -131,7 +127,6 @@ namespace AsteroidMiner.Entities
         private void HandleThrustForwardInput(float input) { thrustForwardInput = input; }
         private void HandleThrustStrafeInput(float input) { thrustStrafeInput = input; }
         private void HandleThrustVerticalInput(float input) { thrustVerticalInput = input; }
-        private void HandleSpaceBrakeToggled(bool active) { spaceBrakeActive = active; }
         
         private void ApplyRotation()
         {
@@ -202,8 +197,9 @@ namespace AsteroidMiner.Entities
         
         private void ApplySpaceBrake()
         {
-            // Only apply space brake if active, has fuel, and ship is moving
-            if (!spaceBrakeActive || !shipStats.HasFuel() || rb.linearVelocity.sqrMagnitude < 0.01f)
+            // Only apply space brake if button is held, has fuel, and ship is moving
+            bool spaceBrakePressed = inputHandler != null && inputHandler.IsSpaceBrakePressed();
+            if (!spaceBrakePressed || !shipStats.HasFuel() || rb.linearVelocity.sqrMagnitude < 0.01f)
                 return;
             
             // Get current player input in local space

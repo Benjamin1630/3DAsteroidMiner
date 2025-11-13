@@ -33,7 +33,6 @@ namespace AsteroidMiner.Systems
         
         [Header("Material Settings")]
         [SerializeField] private Material laserMaterial;
-        [SerializeField] private float emissionIntensity = 3f;
         
         [Header("Particle Systems")]
         [SerializeField] private ParticleSystem startupParticles;

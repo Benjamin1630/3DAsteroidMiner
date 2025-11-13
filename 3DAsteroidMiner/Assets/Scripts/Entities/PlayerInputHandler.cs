@@ -39,12 +39,12 @@ namespace AsteroidMiner.Entities
         public event Action OnScannerPressed;
         public event Action OnDockPressed;
         public event Action OnPausePressed;
-        public event Action<bool> OnSpaceBrakeToggled; // true = activated, false = deactivated
+        public event Action OnSpaceBrakeStarted;
+        public event Action OnSpaceBrakeCanceled;
         
         // State
         private bool isEnabled = true;
         private bool mouseFlightEnabled = false;
-        private bool spaceBrakeActive = false;
         
         #region Unity Lifecycle
         
@@ -151,7 +151,8 @@ namespace AsteroidMiner.Entities
             
             if (spaceBrakeAction != null)
             {
-                spaceBrakeAction.performed += OnSpaceBrakeCallback;
+                spaceBrakeAction.started += OnSpaceBrakeStartedCallback;
+                spaceBrakeAction.canceled += OnSpaceBrakeCanceledCallback;
             }
         }
         
@@ -206,7 +207,8 @@ namespace AsteroidMiner.Entities
             
             if (spaceBrakeAction != null)
             {
-                spaceBrakeAction.performed -= OnSpaceBrakeCallback;
+                spaceBrakeAction.started -= OnSpaceBrakeStartedCallback;
+                spaceBrakeAction.canceled -= OnSpaceBrakeCanceledCallback;
             }
         }
         
@@ -239,10 +241,14 @@ namespace AsteroidMiner.Entities
             OnPausePressed?.Invoke();
         }
         
-        private void OnSpaceBrakeCallback(InputAction.CallbackContext context)
+        private void OnSpaceBrakeStartedCallback(InputAction.CallbackContext context)
         {
-            spaceBrakeActive = !spaceBrakeActive;
-            OnSpaceBrakeToggled?.Invoke(spaceBrakeActive);
+            OnSpaceBrakeStarted?.Invoke();
+        }
+        
+        private void OnSpaceBrakeCanceledCallback(InputAction.CallbackContext context)
+        {
+            OnSpaceBrakeCanceled?.Invoke();
         }
         
         #endregion
@@ -357,11 +363,11 @@ namespace AsteroidMiner.Entities
         }
         
         /// <summary>
-        /// Check if space brake is currently active.
+        /// Check if space brake button is currently being held down.
         /// </summary>
-        public bool IsSpaceBrakeActive()
+        public bool IsSpaceBrakePressed()
         {
-            return spaceBrakeActive;
+            return spaceBrakeAction != null && spaceBrakeAction.IsPressed();
         }
         
         #endregion

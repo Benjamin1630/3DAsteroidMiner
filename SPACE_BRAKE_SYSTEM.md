@@ -1,12 +1,12 @@
 # Space Brake System
 
 ## Overview
-The Space Brake system provides players with a toggleable braking mechanism that applies counter-force to slow down the ship in space. This feature is inspired by space flight simulators like Elite Dangerous and Star Citizen.
+The Space Brake system provides players with a hold-to-use braking mechanism that applies counter-force to slow down the ship in space. This feature is inspired by space flight simulators like Elite Dangerous and Star Citizen.
 
 **Key Behavior**: The space brake is intelligent - it only applies counter-force in directions where you're **NOT** actively thrusting. This allows you to accelerate in one direction while the brake automatically stops drift in other directions.
 
 ## Features
-- **Toggle Activation**: Press X (keyboard) or Y button (gamepad) to toggle space brake on/off
+- **Hold to Activate**: Hold X (keyboard) or Y button (gamepad) to engage space brake
 - **Selective Counter-Force**: Only applies braking force in axes where you're NOT thrusting:
   - Forward/Back: Brakes only if not pressing W/S
   - Left/Right: Brakes only if not pressing A/D
@@ -17,35 +17,35 @@ The Space Brake system provides players with a toggleable braking mechanism that
   - Current ship velocity in non-input directions
   - Fuel efficiency upgrade level (higher upgrades = less fuel consumption)
 - **Smart Behavior**: Only activates when:
-  - Space brake is toggled on
+  - Space brake button is being held down
   - Ship has fuel remaining
   - Ship is moving in directions without thrust input
 
 ## Input Bindings
-- **Keyboard**: X key
-- **Gamepad**: Y button (buttonNorth)
+- **Keyboard**: X key (hold)
+- **Gamepad**: Y button / buttonNorth (hold)
 
 ## Implementation Details
 
 ### PlayerInputHandler.cs Changes
-1. **Added Event**: `OnSpaceBrakeToggled` - Fires when space brake is toggled (passes bool state)
-2. **Added State**: `spaceBrakeActive` - Tracks current space brake state
-3. **Added Callback**: `OnSpaceBrakeCallback` - Handles input and toggles state
-4. **Added Method**: `IsSpaceBrakeActive()` - Public method to check if space brake is active
+1. **Added Events**: 
+   - `OnSpaceBrakeStarted` - Fires when space brake button is pressed down
+   - `OnSpaceBrakeCanceled` - Fires when space brake button is released
+2. **Added Method**: `IsSpaceBrakePressed()` - Public method to check if space brake button is currently held
 
 ### PlayerController.cs Changes
 1. **Added Settings**:
    - `spaceBrakeForce` (default: 30f) - Force multiplier for counter-force
    - `spaceBrakeFuelRate` (default: 0.25f) - Fuel consumption rate per second
    
-2. **Added State**: `spaceBrakeActive` - Tracks space brake state from input
-
-3. **Added Method**: `ApplySpaceBrake()` - Core braking logic that:
-   - Calculates counter-force opposite to velocity
+2. **Added Method**: `ApplySpaceBrake()` - Core braking logic that:
+   - Checks if space brake button is being held
+   - Calculates counter-force only in axes without thrust input
    - Applies force using `ForceMode.Acceleration`
-   - Consumes fuel proportional to time
+   - Limits brake force to 95% of velocity to prevent over-correction
+   - Consumes fuel proportional to time and actual braking force
 
-4. **Added Property**: `IsSpaceBrakeActive` - Public property to check brake state
+3. **Added Property**: `IsSpaceBrakeActive` - Public property that checks if brake button is held
 
 ## Physics Behavior
 The space brake intelligently applies counter-force only in directions where the player is not providing thrust input:
@@ -102,20 +102,21 @@ You can adjust the space brake behavior in the Unity Inspector on the PlayerCont
   - Note: Actual consumption scales with velocity and fuel efficiency upgrades
 
 ## Usage Tips
-1. **Flight Assist Mode**: Leave space brake ON for easier flight control - it acts like flight assist in Elite Dangerous
-2. **Precision Maneuvering**: Thrust in one direction while drift is automatically cancelled in others
-3. **Strafing Combat**: Strafe sideways while the brake keeps you from drifting forward/back
-4. **Quick Direction Changes**: Reverse thrust while brake handles residual drift
-5. **Fuel Efficient**: Only uses fuel for actual braking, not when you're actively thrusting
-6. **Landing Approaches**: Perfect for station docking - thrust toward station while brake kills all lateral drift
-7. **Traditional 6DoF**: Turn it OFF for pure Newtonian physics with no automatic stabilization
+1. **Quick Braking**: Hold X when you need to stop quickly in specific directions
+2. **Precision Maneuvering**: Hold while thrusting in one direction to kill drift in others
+3. **Strafing Combat**: Hold brake + strafe sideways to prevent forward/back drift
+4. **Quick Direction Changes**: Hold brake while reversing thrust for rapid stops
+5. **Fuel Efficient**: Only uses fuel while held and only for actual braking performed
+6. **Landing Approaches**: Hold brake while thrusting toward station to auto-cancel lateral drift
+7. **Manual Control**: Release brake for pure Newtonian physics with no stabilization
 
 ## Technical Notes
 - Uses Unity's new Input System (not legacy Input)
-- Toggle-based rather than hold-based for easier gameplay
+- **Hold-based** rather than toggle for immediate control
 - Integrates with existing fuel system via ShipStats component
 - Only active during flight (disabled when docked)
 - Frame-independent using Time.fixedDeltaTime for fuel consumption
+- Force limited to 95% of velocity to prevent oscillation and over-correction
 
 ## Future Enhancements
 Possible improvements for the space brake system:
